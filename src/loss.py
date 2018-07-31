@@ -25,6 +25,21 @@ class FocalLoss(nn.Module):
         
         return loss.mean()
 
+def jaccard(preds, trues, weight=None, is_average=True, eps=1e-6):
+    num = preds.size(0)
+    preds = preds.view(num, -1)
+    trues = trues.view(num, -1)
+    if weight is not None:
+        w = torch.autograd.Variable(weight).view(num, -1)
+        preds = preds * w
+        trues = trues * w
+    intersection = (preds * trues).sum(1)
+    scores = (intersection + eps) / ((preds + trues).sum(1) - intersection + eps)
+
+    score = scores.sum()
+    if is_average:
+        score /= num
+    return torch.clamp(score, 0., 1)
 
 def dice_loss(preds, trues, weight=None, is_average=True, eps=1e-6):
     preds = preds.contiguous()
@@ -93,5 +108,46 @@ class LossLovasz:
         targets, _ = targets
         return losses_lovasz.lovaszloss(outputs, targets)
 
+class DiceLoss(nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super().__init__()
+        self.size_average = size_average
+        self.register_buffer('weight', weight)
 
+    def forward(self, input, target):
+        return dice_loss(input, target, self.weight, self.size_average)
+    
+class JaccardLoss(nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super().__init__()
+        self.size_average = size_average
+        self.register_buffer('weight', weight)
 
+    def forward(self, input, target):
+        return jaccard(input, target, self.weight, self.size_average)
+    
+class BCEDiceJaccardLoss(nn.Module):
+    def __init__(self, weights, weight=None, size_average=True):
+        super().__init__()
+        self.weights = weights
+        self.bce = nn.BCEWithLogitsLoss()
+        self.jacc = JaccardLoss()
+        self.dice = DiceLoss()
+        self.mapping = {'bce': self.bce,
+                        'jaccard': self.jacc,
+                        'dice': self.dice}
+        self.values = {}
+
+    def forward(self, input, target):
+        target, _ = target
+        loss = 0
+        for k, v in self.weights.items():
+            if not v:
+                continue
+            val = self.mapping[k](input, target)
+            self.values[k] = val
+            if k != 'bce':
+                loss += self.weights[k] * (1 - val)
+            else:
+                loss += self.weights[k] * val
+        return loss
