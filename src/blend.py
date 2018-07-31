@@ -24,9 +24,11 @@ import dataset
 import models
 import utils
 
+
 def load_train_mask(image_id):
     mask = cv2.imread(os.path.join('../input/train/masks', '%s.png' % image_id), 0)
     return (mask / 255.0).astype(np.uint8)
+
 
 def iou_metric_batch(y_true_in, y_pred_in):
     batch_size = y_true_in.shape[0]
@@ -35,6 +37,7 @@ def iou_metric_batch(y_true_in, y_pred_in):
         value = iou_metric(y_true_in[batch], y_pred_in[batch])
         metric.append(value)
     return np.mean(metric)
+
 
 # ref.: https://www.kaggle.com/stainsby/fast-tested-rle
 def rle_encode(img):
@@ -49,8 +52,7 @@ def rle_encode(img):
     return ' '.join(str(x) for x in runs)
 
 
-def generate_submission(preds):
-    
+def generate_submission(out_csv, preds):    
     sample_df = pd.read_csv('../input/sample_submission.csv')
     test_ids = sample_df.id.values
     rows = []
@@ -58,8 +60,7 @@ def generate_submission(preds):
         rows.append([image_id, rle_encode(p.T)])
     
     sub = pd.DataFrame(rows, columns=['id', 'rle_mask'])
-    sub.to_csv('../submissions/tmp.csv', index=False)
-    print('done.')
+    sub.to_csv(out_csv, index=False)
 
     
 def main():
@@ -94,16 +95,14 @@ def main():
         fold_preds = np.mean(fold_preds, axis=0)
         fold_preds_thresholded = (fold_preds > best_thres_tta).astype(np.uint8)
         preds.append(fold_preds_thresholded)
-        
-    # majority voting
-    preds = np.mean(preds, axis=0)
-    preds = np.round(preds)  
-    np.save('final.npy', preds)
+    
+    final = np.mean(preds, axis=0)
+    final = np.round(preds).astype(np.uint8)
+    generate_submission('../submissions/subm_021.csv', final)
     print('done.')
     
 if __name__ == '__main__':
-    # main()
+    main()
+
     
-    final = np.load('final.npy')
-    generate_submission(final)
     
