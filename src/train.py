@@ -11,7 +11,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.backends.cudnn as cudnn
 import torch.backends.cudnn
 
-from loss import LossBinary, FocalLoss, LossLovasz
+from loss import LossBinary, FocalLoss, LossLovasz, BCEDiceJaccardLoss
 import dataset
 import models
 import utils
@@ -21,7 +21,7 @@ def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
     arg('--name', type=str)
-    arg('--jaccard-weight', default=0.0, type=float)
+    arg('--jaccard-weight', default=0.25, type=float)
     arg('--device-ids', type=str, default='0', help='For example 0,1 to run on two GPUs')
     arg('--fold', type=int, help='fold', default=0)
     arg('--output_dir', default='../data/runs', help='checkpoint root')
@@ -31,7 +31,7 @@ def main():
     arg('--workers', type=int, default=4)
     arg('--seed', type=int, default=0)
     arg('--model', type=str, default=models.archs[0], choices=models.archs)
-    arg('--loss', type=str, default='focal', choices=['focal', 'lovasz'])
+    arg('--loss', type=str, default='focal', choices=['focal', 'lovasz', 'bjd', 'bce_jaccard'])
     arg('--focal_gamma', type=float, default=.5)
     arg('--resume', type=str)
     args = parser.parse_args()
@@ -62,8 +62,20 @@ def main():
 
     cudnn.benchmark = True
 
-    train_loader = dataset.make_train_loader(train_file_names, batch_size=args.batch_size, workers=args.workers)
-    valid_loader = dataset.make_val_loader(val_file_names, batch_size=len(device_ids), workers=args.workers)
+    train_loader = dataset.make_loader(
+        train_file_names,
+        transform=dataset.train_transform(),
+        shuffle=True,
+        batch_size=args.batch_size,
+        workers=args.workers)
+
+    valid_loader = dataset.make_loader(
+        val_file_names,
+        transform=dataset.val_transform(),
+        shuffle=False,
+        batch_size=args.batch_size,
+        workers=args.workers)
+
     optimizer = Adam(model.parameters(), lr=args.lr)
 
     #loss = LossBinary(jaccard_weight=args.jaccard_weight)
@@ -72,6 +84,10 @@ def main():
         loss = FocalLoss(args.focal_gamma)
     elif args.loss == 'lovasz':
         loss = LossLovasz()
+    elif args.loss == 'bjd':
+        loss = BCEDiceJaccardLoss({'bce': 0.5, 'jaccard': 0.5, 'dice': 0.0})
+    elif args.loss == 'bce_jaccard':
+        loss = LossBinary(args.jaccard_weight)
     else:
         raise NotImplementedError
 

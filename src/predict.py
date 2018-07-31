@@ -23,11 +23,12 @@ import models
 import utils
 
 
-def predict(model, ids, transform, kind):    
-    if kind == 'test':
-        loader = dataset.make_test_loader(ids, transform=transform)
-    else:
-        loader = dataset.make_val_loader(ids, transform=transform)
+def predict(model, ids, transform, kind):
+    loader = dataset.make_loader(
+        ids,
+        shuffle=False,
+        mode=kind,
+        transform=transform)
     preds = np.zeros((len(ids), 101, 101, 1), dtype=np.float32)
     pred_idx = 0
     with torch.no_grad():
@@ -82,7 +83,7 @@ if __name__ == '__main__':
         
         print('predicting val set')
         val_output = os.path.join(args.path, f"val_preds_fold{fold}.npy")
-        _, val_ids = dataset.get_fold(fold)        
+        _, val_ids = dataset.get_split(fold)
         predict_tta(model, val_ids, val_output, kind='val')
         
         print('predicting test set')

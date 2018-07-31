@@ -79,7 +79,7 @@ def main():
         val_preds = np.mean(val_preds, axis=0)
         
         # find threshold
-        _, filenames = dataset.get_fold(fold)
+        _, filenames = dataset.get_split(fold)
         masks = np.array([load_train_mask(image_id) for image_id in filenames])
         
         thres = np.linspace(0.0, 0.9, 20)
