@@ -14,8 +14,12 @@ LR=0.0001
 #done
 
 
+#for i in 0 1 2 3 4
+#do
+#    python train.py --name exp20-vgg11-lovasz --model unet-vgg11 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss lovasz
+#done
+
 for i in 1 2 3 4
 do
-    python train.py --name exp20-vg11-lovasz --model unet-vgg11 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss lovasz
+    python train.py --name exp22-vgg16 --model unet-vgg16 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard
 done
-
