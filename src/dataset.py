@@ -12,6 +12,7 @@ from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, ElasticT
 SIZE = 128
 PATH = '../input'
 
+
 def get_split(fold):
     train_df = pd.read_csv(os.path.join(PATH, 'train.csv'))
     train_ids = train_df.id.values
@@ -19,20 +20,14 @@ def get_split(fold):
     folds = pd.read_csv(os.path.join(PATH, 'folds.csv'))
     fold_dict = folds.set_index('id').to_dict()['fold']
 
-    train_file_names = [os.path.join(PATH, 'train', 'images', '%s.png' % train_id)
-                        for train_id in train_ids
-                        if fold_dict[train_id] != fold]
+    fold_ids = [train_id for train_id in train_ids if fold_dict[train_id] != fold]
+    val_ids = [train_id for train_id in train_ids if fold_dict[train_id] == fold]
+    return fold_ids, val_ids
 
-    val_file_names = [os.path.join(PATH, 'train', 'images', '%s.png' % train_id)
-                      for train_id in train_ids
-                      if fold_dict[train_id] == fold]
 
-    return train_file_names, val_file_names
-
-def get_test_filenames():
+def get_test_ids():
     sample_df = pd.read_csv(os.path.join(PATH, 'sample_submission.csv'))
-    test_ids = sample_df.id.values
-    return [os.path.join(PATH, 'test', 'images', '%s.png' % test_id) for test_id in test_ids]
+    return sample_df.id.values
 
 
 def train_transform(p=1):
@@ -63,9 +58,9 @@ def get_fold(fold):
     return get_split(fold)
 
 
-def make_train_loader(filenames, batch_size=32, workers=4):
+def make_train_loader(ids, batch_size=32, workers=4):
     train_loader = make_loader(
-        filenames,
+        ids,
         shuffle=True,
         transform=train_transform(p=1),
         batch_size=batch_size,
@@ -73,50 +68,92 @@ def make_train_loader(filenames, batch_size=32, workers=4):
     return train_loader
 
 
-def make_val_loader(filenames, transform=val_transform(p=1), batch_size=32, workers=4):
+def make_val_loader(ids, transform=val_transform(p=1), batch_size=32, workers=4):
     val_loader = make_loader(
-        filenames,
+        ids,
         transform=transform,
         batch_size=batch_size,
         workers=workers)
     return val_loader
 
-def make_test_loader(filenames, transform=None, batch_size=32, workers=4):
+
+def make_test_loader(ids, transform=None, batch_size=32, workers=4):
     return make_loader(
-        filenames,
+        ids,
         transform=transform,
         mode='test',
         shuffle=False,
         batch_size=batch_size,
         workers=workers)    
 
-def make_loader(file_names, shuffle=False, transform=None, mode='train', batch_size=1, workers=2):
+
+def make_loader(ids, shuffle=False, transform=None, mode='train', batch_size=1, workers=2):
     assert transform is not None
     return DataLoader(
-        dataset=TGSDataset(file_names, transform=transform, mode=mode),
+        dataset=TGSDataset(ids, transform=transform, mode=mode),
         shuffle=shuffle,
         num_workers=workers,
         batch_size=batch_size,
         pin_memory=torch.cuda.is_available()
     )
 
-import skimage
 
 class TGSDataset(Dataset):
-    def __init__(self, file_names: list, transform=None, mode='train'):
-        self.file_names = file_names
+    def __init__(self, ids: list, transform=None, mode='train'):
         self.transform = transform
         self.mode = mode
+        if mode != 'test':
+            self.ids_ = pd.read_csv(os.path.join(PATH, 'train.csv')).id.values
+            self.local_ids = ids
+            self.real_idx = dict([(id_, pos) for pos, id_ in enumerate(self.ids_)])
+            # self.file_names = [os.path.join(PATH, 'train', 'images', '%s.png' % id_) for id_ in self.ids_]
+            # self.X_z = np.load('../data/cache/X_train_z.npy')
+            # self.X_amount = np.log1p([np.sum(x) for x in np.load('../data/cache/X_train3_stage1oof.npy')])/10.0
+            # self.X_filters = np.load('../data/cache/X_train_filters.npy')
+
+        else:
+            self.ids_ = pd.read_csv(os.path.join(PATH, 'sample_submission.csv')).id.values
+            self.local_ids = ids
+            self.real_idx = dict([(id_, pos) for pos, id_ in enumerate(self.ids_)])
+            # self.file_names = [os.path.join(PATH, 'test', 'images', '%s.png' % self.id_) for id_ in ids]
+            # self.X_z = np.load('../data/cache/X_test_z.npy')
+            # self.X_amount = np.log1p([np.sum(x) for x in np.load('../data/cache/X_test3_stage1oof.npy')])/10.0
+            # self.X_filters = np.load('../data/cache/X_test_filters.npy')
 
     def __len__(self):
-        return len(self.file_names)
+        return len(self.local_ids)
+
+    def load_image(self, path):
+        img = cv2.imread(str(path))
+        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # img = cv2.resize(img, (128, 128), interpolation=cv2.INTER_CUBIC).reshape(128, 128, 3)
+        img = img.astype(np.float32) / 255.0
+        img -= 0.5
+        return img
+
+    def get_image_fname(self, idx):
+        id_ = self.local_ids[idx]
+        subdir = 'test' if self.mode == 'test' else 'train'
+        return os.path.join(PATH, subdir, 'images', '%s.png' % id_)
+
+    def load_mask(self, path):
+        mask_folder = 'masks'
+        mask = cv2.imread(str(path).replace('images', mask_folder), 0)
+        # mask = cv2.resize(mask, (128, 128), interpolation=cv2.INTER_CUBIC)
+        # mask = mask.astype(np.float32) / 255.0
+        return (mask / 255.0).astype(np.uint8)
+
+    def load_image_extra(self, idx):
+        real_idx = self.real_idx[self.local_ids[idx]]
+        image = self.load_image(self.get_image_fname(idx))
+        return image
 
     def __getitem__(self, idx):
-        img_file_name = self.file_names[idx]
-        data = {'image': load_image(img_file_name)}
+        fname = self.get_image_fname(idx)
+        data = {'image': self.load_image_extra(idx)}
 
         if self.mode != 'test':
-            data['mask'] = load_mask(img_file_name)
+            data['mask'] = self.load_mask(fname)
 
         augmented = self.transform(**data)
         image_tensor = img_to_tensor(augmented['image']).reshape(3, SIZE, SIZE)
@@ -132,34 +169,18 @@ class TGSDataset(Dataset):
             # return img_to_tensor(image).view(3, 128, 128), torch.from_numpy(mask).view(1, 128, 128).float()
             return image_tensor, targets
         else:
-            return image_tensor, str(img_file_name)
+            return image_tensor, str(fname)
 
-
-def load_image(path):
-    if not os.path.exists(path):
-        raise(path)
-    img = cv2.imread(str(path))
-    if img is None:
-        raise
-    #img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    #img = cv2.resize(img, (128, 128), interpolation=cv2.INTER_CUBIC).reshape(128, 128, 3)
-    img= img.astype(np.float32) / 255.0
-    img -= 0.5
-    return img
-
-
-def load_mask(path):
-    if not os.path.exists(path):
-        raise(path)
-    mask_folder = 'masks'    
-    mask = cv2.imread(str(path).replace('images', mask_folder), 0)
-    #mask = cv2.resize(mask, (128, 128), interpolation=cv2.INTER_CUBIC)
-    #mask = mask.astype(np.float32) / 255.0
-    return (mask/255.0).astype(np.uint8)
 
 if __name__ == '__main__':
     a, b = get_fold(0)
-    loader = make_val_loader(b)
+    print(len(a), len(b))
+    loader = make_train_loader(b)
     for inputs, target in loader:
-        print('.')
+        print(inputs.shape, target[0].shape)
+        # npy = inputs.data.cpu().numpy()
+        # for i in range(3):
+        #    print(np.min (npy[0, ..., i]))
+        #    print(np.max (npy[0, ..., i]))
+        #    print(np.mean(npy[0, ..., i]))
         break

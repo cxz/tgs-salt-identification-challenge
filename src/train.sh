@@ -1,6 +1,21 @@
 #!/bin/bash
 
-for i in 0 1 2 3 4
+#for i in 0 1 2 3 4
+#do
+#    python train.py --name exp20 --model unet-resnet101 --lr 0.0001 --n-epochs 250 --fold $i --loss focal --focal_gamma 0.5
+#done
+
+N_EPOCHS=200
+LR=0.0001
+
+#for i in 0 1 2 3 4
+#do
+#    python train.py --name exp20-resnet101-lovasz --model unet-resnet101 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss lovasz
+#done
+
+
+for i in 1 2 3 4
 do
-    python train.py --name exp20 --model unet-resnet152 --lr 0.0001 --n-epochs 250 --fold $i    
+    python train.py --name exp20-vg11-lovasz --model unet-vgg11 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss lovasz
 done
+

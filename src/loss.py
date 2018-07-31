@@ -85,5 +85,13 @@ class LossBinaryMixedDiceBCE:
         return dice_loss_ + bce_loss_
 
 
+import losses_lovasz
+
+class LossLovasz:
+
+    def __call__(self, outputs, targets):
+        targets, _ = targets
+        return losses_lovasz.lovaszloss(outputs, targets)
+
 
 

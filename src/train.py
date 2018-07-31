@@ -11,7 +11,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.backends.cudnn as cudnn
 import torch.backends.cudnn
 
-from loss import LossBinary, FocalLoss
+from loss import LossBinary, FocalLoss, LossLovasz
 import dataset
 import models
 import utils
@@ -31,6 +31,8 @@ def main():
     arg('--workers', type=int, default=4)
     arg('--seed', type=int, default=0)
     arg('--model', type=str, default=models.archs[0], choices=models.archs)
+    arg('--loss', type=str, default='focal', choices=['focal', 'lovasz'])
+    arg('--focal_gamma', type=float, default=.5)
     arg('--resume', type=str)
     args = parser.parse_args()
 
@@ -66,10 +68,21 @@ def main():
 
     #loss = LossBinary(jaccard_weight=args.jaccard_weight)
     #loss = LossBinaryMixedDiceBCE(dice_weight=0.5, bce_weight=0.5)
-    loss = FocalLoss(0.5)
+    if args.loss == 'focal':
+        loss = FocalLoss(args.focal_gamma)
+    elif args.loss == 'lovasz':
+        loss = LossLovasz()
+    else:
+        raise NotImplementedError
+
+    #lovaszloss
+
     validation = validation_binary
 
+
     scheduler = ReduceLROnPlateau(optimizer, verbose=True, min_lr=1e-6, factor=0.5)
+    # import learning_rates
+    #  scheduler = learning_rates.CyclicLR(optimizer, base_lr=1e-5, max_lr=5e-5)
     utils.train( 
         experiment=experiment,
         output_dir=output_dir,
