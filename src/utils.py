@@ -28,11 +28,12 @@ def write_event(log, epoch, step: int, **data):
     log.flush()
 
 
-def save(model, optimizer, model_path, epoch, step):    
+def save(model, optimizer, model_path, epoch, step, valid_best):    
     # epoch_path = "{}_epoch{}.pth".format(str(model_path), epoch)
     torch.save({
         'model': model.state_dict(),
         'epoch': epoch,
+        'valid_best': valid_best,
         'optimizer': optimizer.state_dict(),
         'step': step,        
     }, str(model_path))
@@ -46,12 +47,14 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
         state = torch.load(args.resume)
         epoch = state['epoch']
         step = state['step']
+        valid_best = state['valid_best']
         model.load_state_dict(state['model'])
         optimizer.load_state_dict(state['optimizer'])
-        print('Restored model, epoch {}, step {:,}'.format(epoch, step))
+        print('Restored model, epoch {}, step {:,}, valid_best {}'.format(epoch, step, valid_best))
     else:
         epoch = 1
         step = 0
+        valid_best = None
     
     model_path = output_dir / 'model_{fold}.pth'.format(fold=fold)
     
@@ -62,7 +65,6 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
         scores = []
             
     smooth_mean = 10
-    valid_best = None
     
     for epoch in range(epoch, n_epochs + 1):
         model.train()
@@ -99,7 +101,7 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
 
             valid_metrics = validation(model, criterion, valid_loader)            
             scores.append([
-                "{}".format(fold), 
+                "{:01d}".format(fold), 
                 "{:03d}".format(epoch),
                 "{:.4f}".format(valid_metrics['val_loss']), 
                 "{:.4f}".format(valid_metrics['val_iou'])
@@ -109,12 +111,12 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
                         
             if valid_best is None or valid_metrics['val_iou'] > valid_best:
                 valid_best = valid_metrics['val_iou']
-                save(model, optimizer, model_path, epoch, step)
+                save(model, optimizer, model_path, epoch, step, valid_best)
 
             scheduler.step(valid_metrics['val_loss'])
         except KeyboardInterrupt:
             tq.close()
             # print('Ctrl+C, saving snapshot')
-            # save(model, optimizer, model_path, epoch, step)
+            # save(model, optimizer, model_path, epoch, step, valid_best)
             print('done.')
             return
