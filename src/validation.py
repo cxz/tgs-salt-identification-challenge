@@ -14,12 +14,15 @@ def validation_binary(model: nn.Module, criterion, valid_loader):
         for inputs, targets in valid_loader:                        
             inputs = utils.cuda(inputs)
             with torch.no_grad():
-                targets = [utils.cuda(t) for t in targets]
-            t0 = targets[0]
+                targets = utils.cuda(targets)
             outputs = model(inputs)
             loss = criterion(outputs, targets)
             losses.append(loss.item())
-            iou += [metric.iou_metric(t0.cpu().numpy(), (outputs.cpu().numpy() > .5))]
+
+            targets_npy = targets.cpu().numpy()
+            outputs_npy = outputs.cpu().numpy()
+
+            iou += [metric.iou_metric(targets_npy, (outputs_npy > .5))]
 
         valid_loss = np.mean(losses)  # type: float
         valid_iou = np.mean(iou).astype(np.float64)        

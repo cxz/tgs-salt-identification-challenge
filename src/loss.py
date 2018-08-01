@@ -3,6 +3,7 @@ from torch import nn
 from torch.nn import functional as F
 import utils
 import numpy as np
+import losses_lovasz
 
 
 class FocalLoss(nn.Module):
@@ -11,7 +12,6 @@ class FocalLoss(nn.Module):
         self.gamma = gamma
         
     def forward(self, input, target):
-        target, _ = target
         # Inspired by the implementation of binary_cross_entropy_with_logits
         if not (target.size() == input.size()):
             raise ValueError("Target size ({}) must be the same as input size ({})".format(target.size(), input.size()))
@@ -71,7 +71,6 @@ class LossBinary:
         self.jaccard_weight = jaccard_weight
 
     def __call__(self, outputs, targets):
-        targets, _ = targets
         loss = (1 - self.jaccard_weight) * self.nll_loss(outputs, targets)
         if self.jaccard_weight:
             eps = 1e-15
@@ -92,7 +91,6 @@ class LossBinaryMixedDiceBCE:
         self.bce_weight = bce_weight
 
     def __call__(self, outputs, targets):
-        targets, _ = targets
         smooth = 0
         dice_activation = 'sigmoid'
         dice_loss_ = self.dice_weight * (1 - dice_loss(outputs, targets.float()))
@@ -100,12 +98,9 @@ class LossBinaryMixedDiceBCE:
         return dice_loss_ + bce_loss_
 
 
-import losses_lovasz
 
 class LossLovasz:
-
     def __call__(self, outputs, targets):
-        targets, _ = targets
         return losses_lovasz.lovaszloss(outputs, targets)
 
 class DiceLoss(nn.Module):
@@ -139,7 +134,6 @@ class BCEDiceJaccardLoss(nn.Module):
         self.values = {}
 
     def forward(self, input, target):
-        target, _ = target
         loss = 0
         for k, v in self.weights.items():
             if not v:

@@ -30,35 +30,25 @@ def get_test_ids():
     return sample_df.id.values
 
 
-def train_transform(p=1):
+def train_transform():
     return Compose([
         PadIfNeeded(min_height=SIZE, min_width=SIZE),
-        HorizontalFlip(p=0.5),
-        ElasticTransform(p=0.1),
+        HorizontalFlip(p=0.0),
+        # ElasticTransform(p=0.0),
         ShiftScaleRotate(
-            p=0.5,
-            rotate_limit=0.0,
-            shift_limit=.15,
-            scale_limit=.15,
+            p=0.0,
+            rotate_limit=.0,
+            shift_limit=.25,
+            scale_limit=.05,
             interpolation=cv2.INTER_CUBIC,
             border_mode=cv2.BORDER_REFLECT_101),
-    ], p=p)
+    ], p=1)
 
 
-def val_transform(p=1):
+def val_transform():
     return Compose([
         PadIfNeeded(min_height=SIZE, min_width=SIZE),
-    ], p=p)
-
-
-def make_test_loader(ids, transform=None, batch_size=32, workers=4):
-    return make_loader(
-        ids,
-        transform=transform,
-        mode='test',
-        shuffle=False,
-        batch_size=batch_size,
-        workers=workers)    
+    ], p=1)
 
 
 def make_loader(ids, shuffle=False, transform=None, mode='train', batch_size=32, workers=4):
@@ -80,19 +70,10 @@ class TGSDataset(Dataset):
             self.ids_ = pd.read_csv(os.path.join(PATH, 'train.csv')).id.values
             self.local_ids = ids
             self.real_idx = dict([(id_, pos) for pos, id_ in enumerate(self.ids_)])
-            # self.file_names = [os.path.join(PATH, 'train', 'images', '%s.png' % id_) for id_ in self.ids_]
-            # self.X_z = np.load('../data/cache/X_train_z.npy')
-            # self.X_amount = np.log1p([np.sum(x) for x in np.load('../data/cache/X_train3_stage1oof.npy')])/10.0
-            # self.X_filters = np.load('../data/cache/X_train_filters.npy')
-
         else:
             self.ids_ = pd.read_csv(os.path.join(PATH, 'sample_submission.csv')).id.values
             self.local_ids = ids
             self.real_idx = dict([(id_, pos) for pos, id_ in enumerate(self.ids_)])
-            # self.file_names = [os.path.join(PATH, 'test', 'images', '%s.png' % self.id_) for id_ in ids]
-            # self.X_z = np.load('../data/cache/X_test_z.npy')
-            # self.X_amount = np.log1p([np.sum(x) for x in np.load('../data/cache/X_test3_stage1oof.npy')])/10.0
-            # self.X_filters = np.load('../data/cache/X_test_filters.npy')
 
     def __len__(self):
         return len(self.local_ids)
@@ -103,55 +84,40 @@ class TGSDataset(Dataset):
         img -= 0.5
         return img
 
-    def get_image_fname(self, idx):
-        id_ = self.local_ids[idx]
+    def get_image_fname(self, image_id):
         subdir = 'test' if self.mode == 'test' else 'train'
-        return os.path.join(PATH, subdir, 'images', '%s.png' % id_)
+        return os.path.join(PATH, subdir, 'images', '%s.png' % image_id)
 
-    def load_mask(self, path):
-        mask_folder = 'masks'
-        mask = cv2.imread(str(path).replace('images', mask_folder), 0)
+    def load_mask(self, image_id):
+        path = os.path.join(PATH, 'train', 'masks', '%s.png' % image_id)
+        mask = cv2.imread(path, 0)
         return (mask / 255.0).astype(np.uint8)
 
-    def load_image_extra(self, idx):
-        real_idx = self.real_idx[self.local_ids[idx]]
-        image = self.load_image(self.get_image_fname(idx))
-        return image
+    def load_image_extra(self, image_id):
+        return self.load_image(self.get_image_fname(image_id))
 
     def __getitem__(self, idx):
-        fname = self.get_image_fname(idx)
-        data = {'image': self.load_image_extra(idx)}
+        image_id = self.local_ids[idx]
+        data = {'image': self.load_image_extra(image_id)}
 
         if self.mode != 'test':
-            data['mask'] = self.load_mask(fname)
+            data['mask'] = self.load_mask(image_id)
 
         augmented = self.transform(**data)
         image_tensor = img_to_tensor(augmented['image']).reshape(3, SIZE, SIZE)
 
         if self.mode != 'test':
-            mask = augmented['mask']
-            # y_cls = np.array([1, np.sum(mask) > 0], dtype=np.uint8)
-            targets = (
-                # torch.from_numpy(mask).reshape(SIZE, SIZE).long(),
-                torch.from_numpy(mask).reshape(1, SIZE, SIZE).float(),
-                # torch.from_numpy(y_cls).float()
-                None
-            )
-            # return img_to_tensor(image).view(3, 128, 128), torch.from_numpy(mask).view(1, 128, 128).float()
-            return image_tensor, targets
+            return image_tensor, torch.from_numpy(augmented['mask']).reshape(1, SIZE, SIZE).float()
         else:
-            return image_tensor, str(fname)
+            return image_tensor, self.get_image_fname(image_id)
 
 
 if __name__ == '__main__':
     a, b = get_split(0)
     print(len(a), len(b))
-    loader = make_loader(b)
+    loader = make_loader(b, transform=train_transform())
     for inputs, target in loader:
-        print(inputs.shape, target[0].shape)
-        # npy = inputs.data.cpu().numpy()
-        # for i in range(3):
-        #    print(np.min (npy[0, ..., i]))
-        #    print(np.max (npy[0, ..., i]))
-        #    print(np.mean(npy[0, ..., i]))
+        inputs = inputs.data.cpu().numpy()
+        target = target.data.cpu().numpy()
+        print(inputs.shape, np.max(inputs), target.shape, np.max(target))
         break

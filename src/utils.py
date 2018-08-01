@@ -19,15 +19,6 @@ def get_learning_rate(optimizer):
     return optimizer.param_groups[0]['lr']
 
 
-def write_event(log, epoch, step: int, **data):
-    data['epoch'] = epoch
-    data['step'] = step
-    data['dt'] = datetime.now().isoformat()    
-    log.write(json.dumps(data, sort_keys=True))
-    log.write('\n')
-    log.flush()
-
-
 def save(model, optimizer, model_path, epoch, step, valid_best):    
     # epoch_path = "{}_epoch{}.pth".format(str(model_path), epoch)
     torch.save({
@@ -59,11 +50,8 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
     model_path = output_dir / 'model_{fold}.pth'.format(fold=fold)
     
     scores_fname = output_dir / 'scores.csv'
-    if scores_fname.exists():
-        scores = pd.read_csv(scores_fname).values.tolist()
-    else:
-        scores = []
-            
+    scores = scores = pd.read_csv(scores_fname).values.tolist() if scores_fname.exists() else []
+
     smooth_mean = 10
     
     for epoch in range(epoch, n_epochs + 1):
@@ -79,7 +67,7 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
                 inputs = cuda(inputs)
 
                 with torch.no_grad():
-                    targets = [cuda(t) for t in targets]
+                    targets = cuda(targets)
                     
                 outputs = model(inputs)
                 loss = criterion(outputs, targets)
@@ -96,7 +84,6 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
                 mean_loss = np.mean(losses[-smooth_mean:])
                 tq.set_postfix(loss='{:.5f}'.format(mean_loss))
 
-                
             tq.close()
 
             valid_metrics = validation(model, criterion, valid_loader)            
