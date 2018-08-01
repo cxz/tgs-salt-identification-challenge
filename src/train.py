@@ -17,6 +17,7 @@ import models
 import utils
 import random
 
+
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
@@ -58,19 +59,19 @@ def main():
             device_ids = None
         model = nn.DataParallel(model, device_ids=device_ids).cuda()
 
-    train_file_names, val_file_names = dataset.get_split(args.fold)
+    train_ids, val_ids = dataset.get_split(args.fold)
 
     cudnn.benchmark = True
 
     train_loader = dataset.make_loader(
-        train_file_names,
+        train_ids,
         transform=dataset.train_transform(),
         shuffle=True,
         batch_size=args.batch_size,
         workers=args.workers)
 
     valid_loader = dataset.make_loader(
-        val_file_names,
+        val_ids,
         transform=dataset.val_transform(),
         shuffle=False,
         batch_size=args.batch_size,
@@ -78,8 +79,8 @@ def main():
 
     optimizer = Adam(model.parameters(), lr=args.lr)
 
-    #loss = LossBinary(jaccard_weight=args.jaccard_weight)
-    #loss = LossBinaryMixedDiceBCE(dice_weight=0.5, bce_weight=0.5)
+    # loss = LossBinary(jaccard_weight=args.jaccard_weight)
+    # loss = LossBinaryMixedDiceBCE(dice_weight=0.5, bce_weight=0.5)
     if args.loss == 'focal':
         loss = FocalLoss(args.focal_gamma)
     elif args.loss == 'lovasz':
@@ -91,15 +92,10 @@ def main():
     else:
         raise NotImplementedError
 
-    #lovaszloss
-
     validation = validation_binary
-
-
     scheduler = ReduceLROnPlateau(optimizer, verbose=True, min_lr=1e-6, factor=0.5)
-    # import learning_rates
-    #  scheduler = learning_rates.CyclicLR(optimizer, base_lr=1e-5, max_lr=5e-5)
-    utils.train( 
+
+    utils.train(
         experiment=experiment,
         output_dir=output_dir,
         optimizer=optimizer,
