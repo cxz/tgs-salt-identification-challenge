@@ -74,7 +74,7 @@ def main():
         val_ids,
         transform=dataset.val_transform(),
         shuffle=False,
-        batch_size=args.batch_size,
+        batch_size=len(device_ids),
         workers=args.workers)
 
     optimizer = Adam(model.parameters(), lr=args.lr)
