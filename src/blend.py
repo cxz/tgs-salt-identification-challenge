@@ -65,9 +65,9 @@ def generate_submission(out_csv, preds):
     sub.to_csv(out_csv, index=False)
 
     
-def main():
+def main(generate_submission=False):
     experiments = [
-        '../data/runs/exp22-vgg16', 
+        '../data/subm022', 
         '../data/subm020', 
         '../data/subm019'
     ]
@@ -105,12 +105,13 @@ def main():
     
     # majority voting
     final = np.round(preds/5.0).astype(np.uint8)
-    print(final.shape)
     
-    output_csv = '../submissions/subm_022.csv'
-    print('writing to ', output_csv)
-    generate_submission(output_csv, final)
-    print('done.')
+    if generate_submission:
+        output_csv = '../submissions/subm_022.csv'
+        print('writing to ', output_csv)
+        
+        generate_submission(output_csv, final)
+        print('done.')
     
 if __name__ == '__main__':
     main()

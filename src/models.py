@@ -7,13 +7,12 @@ import other_models
 archs = ['unet-resnet101', 'unet-resnet152', 'unet-vgg11', 'unet-vgg16']
 
 def get_model(model_path, model_type):
-    num_classes = 1
-
+    
     if model_type == 'unet-resnet101':
-        model = UNetResNet(encoder_depth=101, num_classes=num_classes, num_filters=16, dropout_2d=0.1, pretrained=True)
+        model = UNetResNet(encoder_depth=101, num_classes=1, num_filters=16, dropout_2d=0.1, pretrained=True)
 
     elif model_type == 'unet-resnet152':
-        model = UNetResNet(encoder_depth=152, num_classes=num_classes, num_filters=16, dropout_2d=0.1, pretrained=True)
+        model = UNetResNet(encoder_depth=152, num_classes=1, num_filters=16, dropout_2d=0.1, pretrained=True)
 
     elif model_type == 'unet-vgg11':
         model = other_models.UNet11()
