@@ -2,3 +2,4 @@ torch==0.4.0
 numpy==1.14.0
 tqdm==4.19.4
 albumentations
+pathos==0.2.2.1

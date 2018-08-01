@@ -24,6 +24,7 @@ import dataset
 import models
 import utils
 
+from super_pool import SuperPool
 
 def load_train_mask(image_id):
     mask = cv2.imread(os.path.join('../input/train/masks', '%s.png' % image_id), 0)
@@ -53,19 +54,25 @@ def rle_encode(img):
 
 
 def generate_submission(out_csv, preds):    
+    pool = SuperPool()
     sample_df = pd.read_csv('../input/sample_submission.csv')
     test_ids = sample_df.id.values
-    rows = []
-    for image_id, p in zip(test_ids, preds):
-        rows.append([image_id, rle_encode(p.T)])
     
+    preds_encoded = pool.map(rle_encode, [x.T for x in preds])
+    rows = [(image_id, p) for image_id, p in zip(test_ids, preds_encoded)]
+
     sub = pd.DataFrame(rows, columns=['id', 'rle_mask'])
     sub.to_csv(out_csv, index=False)
 
     
 def main():
-    experiments = ['../data/runs/exp20-vgg11-lovasz', '../data/subm019']
-    preds = []
+    experiments = [
+        '../data/runs/exp22-vgg16', 
+        '../data/subm020', 
+        '../data/subm019'
+    ]
+    
+    preds = np.zeros((18000, 101, 101, 1), dtype=np.float32)
     
     for fold in range(5):
         print('processing fold ', fold)
@@ -94,11 +101,15 @@ def main():
         # simple average
         fold_preds = np.mean(fold_preds, axis=0)
         fold_preds_thresholded = (fold_preds > best_thres_tta).astype(np.uint8)
-        preds.append(fold_preds_thresholded)
+        preds += fold_preds_thresholded
     
-    final = np.mean(preds, axis=0)
-    final = np.round(preds).astype(np.uint8)
-    generate_submission('../submissions/subm_021.csv', final)
+    # majority voting
+    final = np.round(preds/5.0).astype(np.uint8)
+    print(final.shape)
+    
+    output_csv = '../submissions/subm_022.csv'
+    print('writing to ', output_csv)
+    generate_submission(output_csv, final)
     print('done.')
     
 if __name__ == '__main__':

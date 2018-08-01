@@ -33,10 +33,15 @@ def get_test_ids():
 def train_transform():
     return Compose([
         PadIfNeeded(min_height=SIZE, min_width=SIZE),
-        HorizontalFlip(p=0.0),
-        # ElasticTransform(p=0.0),
+        HorizontalFlip(
+            p=0.5),
+        ElasticTransform(
+            p=0.25,
+            alpha=1,
+            sigma=20,
+            alpha_affine=20),
         ShiftScaleRotate(
-            p=0.0,
+            p=0.5,
             rotate_limit=.0,
             shift_limit=.25,
             scale_limit=.05,
