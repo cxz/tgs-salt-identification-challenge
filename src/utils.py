@@ -58,7 +58,7 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
     
     for epoch in range(epoch, n_epochs + 1):
         model.train()
-        tq = tqdm.tqdm(total=(steps_per_epoch)
+        tq = tqdm.tqdm(total=(steps_per_epoch))
         lr = get_learning_rate(optimizer)
         tq.set_description('Epoch {}, lr {}'.format(epoch, lr))
         losses = []
