@@ -53,11 +53,12 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
     scores_fname = output_dir / 'scores.csv'
     scores = scores = pd.read_csv(scores_fname).values.tolist() if scores_fname.exists() else []
 
+    steps_per_epoch = len(train_loader) * batch_size
     smooth_mean = 10
     
     for epoch in range(epoch, n_epochs + 1):
         model.train()
-        tq = tqdm.tqdm(total=(len(train_loader) * batch_size))
+        tq = tqdm.tqdm(total=(steps_per_epoch)
         lr = get_learning_rate(optimizer)
         tq.set_description('Epoch {}, lr {}'.format(epoch, lr))
         losses = []
@@ -74,13 +75,12 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
                 loss = criterion(outputs, targets)
 
                 optimizer.zero_grad()
-                batch_size = inputs.size(0)
                 loss.backward()
                 optimizer.step()
-                # scheduler.batch_step()  # cyclic updates each batch
+                
                 step += 1
 
-                tq.update(batch_size)
+                tq.update(inputs.size(0))
                 losses.append(loss.item())
                 mean_loss = np.mean(losses[-smooth_mean:])
                 tq.set_postfix(loss='{:.5f}'.format(mean_loss))
