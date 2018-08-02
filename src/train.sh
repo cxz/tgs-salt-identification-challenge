@@ -23,7 +23,7 @@ LR=0.0001
 #    python train.py --name exp22-vgg16 --model unet-vgg16 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss lovasz
 #done
 
-for i in 0 1 2 3 4
+for i in 3 4 2
 do
     python train.py --name exp23-resnet152 --model unet-resnet152 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss lovasz
 done

@@ -34,7 +34,7 @@ def main():
     arg('--model', type=str, default=models.archs[0], choices=models.archs)
     arg('--loss', type=str, default='focal', choices=['focal', 'lovasz', 'bjd', 'bce_jaccard'])
     arg('--focal-gamma', type=float, default=.5)
-    arg('--resume', type=str)
+    arg('--resume', action="store_true")
     args = parser.parse_args()
 
     random.seed(args.seed)
@@ -44,7 +44,7 @@ def main():
         experiment = uuid.uuid4().hex        
     else:
         experiment = args.name 
-            
+        
     output_dir = Path(args.output_dir) / experiment
     output_dir.mkdir(exist_ok=True, parents=True)
     output_dir.joinpath('params.json').write_text(json.dumps(vars(args), indent=True, sort_keys=True))
@@ -94,6 +94,7 @@ def main():
 
     validation = validation_binary
     scheduler = ReduceLROnPlateau(optimizer, verbose=True, min_lr=1e-6, factor=0.5)
+    snapshot = utils.fold_snapshot(output_dir, fold) if args.resume else None
 
     utils.train(
         experiment=experiment,
@@ -106,7 +107,10 @@ def main():
         train_loader=train_loader,
         valid_loader=valid_loader,
         validation=validation,
-        fold=args.fold
+        fold=args.fold,
+        batch_size=args.batch_size,
+        n_epochs=args.n_epochs,        
+        snapshot=snapshot
     )
 
 

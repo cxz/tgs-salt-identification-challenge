@@ -11,6 +11,10 @@ import tqdm
 from torch import nn
 
 
+def fold_snapshot(output_dir, fold):
+    fname = os.path.join(output_dir, f"model_{fold}.pth")
+    return fname if os.path.exists(fname) else None
+
 def cuda(x):
     return x.cuda(async=True) if torch.cuda.is_available() else x
 
@@ -30,12 +34,9 @@ def save(model, optimizer, model_path, epoch, step, valid_best):
     }, str(model_path))
 
 
-def train(experiment, output_dir, args, model, criterion, scheduler, train_loader, valid_loader, validation, optimizer, n_epochs=None, fold=None):
-    # lr = args.lr
-    n_epochs = n_epochs or args.n_epochs
-    
-    if args.resume:
-        state = torch.load(args.resume)
+def train(experiment, output_dir, args, model, criterion, scheduler, train_loader, valid_loader, validation, optimizer, n_epochs=None, fold=None, batch_size=None, snapshot=None):
+    if snapshot:
+        state = torch.load(snapshot)
         epoch = state['epoch']
         step = state['step']
         valid_best = state['valid_best']
@@ -56,7 +57,7 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
     
     for epoch in range(epoch, n_epochs + 1):
         model.train()
-        tq = tqdm.tqdm(total=(len(train_loader) * args.batch_size))
+        tq = tqdm.tqdm(total=(len(train_loader) * batch_size))
         lr = get_learning_rate(optimizer)
         tq.set_description('Epoch {}, lr {}'.format(epoch, lr))
         losses = []
