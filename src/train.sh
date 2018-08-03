@@ -28,4 +28,14 @@ LR=0.0001
 #    python train.py --name exp23-resnet152-bce-jaccard --model unet-resnet152 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard
 #done
 
-# python predict.py --path ../data/runs/exp23-resnet152
+#for i in 0 1 2 3 4
+#do
+#    python train.py --name exp25-dpn92-bce-jaccard --model unet-dpn92 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard
+#done
+
+for i in 4
+do
+    python train.py --name exp24-resnet50-bce-jaccard --model unet-resnet50 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard --resume
+done
+
+
