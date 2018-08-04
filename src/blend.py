@@ -67,9 +67,11 @@ def generate_submission(out_csv, preds):
     
 def main(write_submission=True):
     experiments = [
-        '../data/subm023', 
-        '../data/subm022', 
-        '../data/subm020', 
+        '../data/subm025',
+        '../data/subm024',
+        '../data/subm023',
+        '../data/subm022',
+        '../data/subm020',
         '../data/subm019'
     ]
     
@@ -108,7 +110,7 @@ def main(write_submission=True):
     final = np.round(preds/5.0).astype(np.uint8)
     
     if write_submission:
-        output_csv = '../submissions/subm_023.csv'
+        output_csv = '../submissions/subm_025.csv'
         print('writing to ', output_csv)
         
         generate_submission(output_csv, final)
