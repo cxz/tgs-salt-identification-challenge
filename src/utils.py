@@ -16,12 +16,18 @@ def fold_snapshot(output_dir, fold):
     fname = os.path.join(output_dir, f"model_{fold}.pth")
     return fname if os.path.exists(fname) else None
 
+
 def cuda(x):
     return x.cuda(async=True) if torch.cuda.is_available() else x
 
 
 def get_learning_rate(optimizer):
     return optimizer.param_groups[0]['lr']
+
+
+def set_learning_rate(optimizer, lr):
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
 
 
 def save(model, optimizer, model_path, epoch, step, valid_best):    

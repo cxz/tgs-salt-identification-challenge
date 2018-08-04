@@ -11,7 +11,8 @@ archs = [
     'unet-resnet152', 
     'unet-vgg11', 
     'unet-vgg16',
-    'unet-dpn92'
+    'unet-dpn92',
+    'unet-incv3'
 ]
 
 def get_model(model_path, model_type):
@@ -34,6 +35,10 @@ def get_model(model_path, model_type):
     elif model_type == 'unet-dpn92':
         from zoo.albu_zoo.unet import DPNUnet
         model = DPNUnet(1, 3)
+
+    elif model_type == 'unet-incv3':
+        from zoo.albu_zoo.unet import Incv3
+        model = Incv3(1, 3)
 
     else:
         raise NotImplementedError
