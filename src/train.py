@@ -23,7 +23,7 @@ def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
     arg('--name', type=str)
-    arg('--jaccard-weight', default=0.5, type=float)
+    arg('--jaccard-weight', default=0.25, type=float)
     arg('--device-ids', type=str, default='0', help='For example 0,1 to run on two GPUs')
     arg('--fold', type=int, help='fold', default=0)
     arg('--output-dir', default='../data/runs', help='checkpoint root')
@@ -94,7 +94,7 @@ def main():
         raise NotImplementedError
 
     validation = validation_binary
-    scheduler = ReduceLROnPlateau(optimizer, verbose=True, min_lr=1e-6, factor=0.5)
+    scheduler = ReduceLROnPlateau(optimizer, verbose=True, min_lr=1e-7, factor=0.5)
     snapshot = utils.fold_snapshot(output_dir, args.fold) if args.resume else None
 
     utils.train(
