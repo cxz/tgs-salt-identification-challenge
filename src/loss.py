@@ -6,6 +6,16 @@ import numpy as np
 import losses_lovasz
 
 
+# def jaccard_distance(outputs, targets):
+#     smooth = 100
+#     jaccard_target = (targets == 1).float()
+#     jaccard_output = F.sigmoid(outputs)
+#
+#     intersection = (jaccard_output * jaccard_target).sum()
+#     sum_ = jaccard_output.sum() + jaccard_target.sum()
+#     jacc = (intersection + smooth) / (sum_ - intersection + smooth)
+#     return 1 - jacc
+
 class FocalLoss(nn.Module):
     def __init__(self, gamma):
         super().__init__()
