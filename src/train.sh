@@ -38,8 +38,24 @@ LR=0.0001
 #    python train.py --name exp25-dpn92-bce-jaccard --model unet-dpn92 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard --resume
 #done
 
+#for i in 0 1 2 3 4
+#do
+#    python train.py --name exp26-unet-incv3 --model unet-incv3 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard --resume
+#done
+
+#for i in 0 1 2 3 4
+#do
+#    python train.py --name exp27-unet-dpn92-224 --model unet-dpn92 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard --batch-size 16
+#done
+
+for i in 4
+do
+    python train.py --name exp28-resnet101-bce-jaccard --model unet-resnet101 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard --resume
+done
+
 for i in 0 1 2 3 4
 do
-    python train.py --name exp26-unet-incv3 --model unet-incv3 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard
+    python train.py --name exp29-unet-serefinenet101 --model unet-serefinenet101 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard
 done
+
 

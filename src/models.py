@@ -12,7 +12,9 @@ archs = [
     'unet-vgg11', 
     'unet-vgg16',
     'unet-dpn92',
-    'unet-incv3'
+    #'unet-dpn131',
+    'unet-incv3',
+    'unet-serefinenet101'
 ]
 
 def get_model(model_path, model_type):
@@ -35,6 +37,14 @@ def get_model(model_path, model_type):
     elif model_type == 'unet-dpn92':
         from zoo.albu_zoo.unet import DPNUnet
         model = DPNUnet(1, 3)
+
+    elif model_type == 'unet-serefinenet101':
+        from zoo.crafz.make_model import make_model
+        model = make_model()
+
+    #elif model_type == 'unet-dpn131':
+    #    from zoo.albu_zoo.unet import DPNUnet
+    #    model = DPNUnet(1, encoder_name='dpn131')
 
     elif model_type == 'unet-incv3':
         from zoo.albu_zoo.unet import Incv3
@@ -88,7 +98,7 @@ class DecoderBlockV2(nn.Module):
             )
         else:
             self.block = nn.Sequential(
-                nn.Upsample(scale_factor=2, mode='bilinear'),
+                nn.Upsample(scale_factor=2, mode='nearest'),
                 ConvRelu(in_channels, middle_channels),
                 ConvRelu(middle_channels, out_channels),
             )
