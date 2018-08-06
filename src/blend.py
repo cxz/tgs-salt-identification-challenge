@@ -80,12 +80,12 @@ def main(write_submission=True):
 
     fold_weights = {
         0: {
-            #'../data/subm029': 1,
-            #'../data/subm028': 1,
+            '../data/subm029': 1,
+            '../data/subm028': 1,
             '../data/subm026': 1,
-            '../data/subm025': 1,
+            '../data/subm025': 2,
             '../data/subm024': 1,
-            '../data/subm023': 1,
+            '../data/subm023': 2,
             '../data/subm022': 1,
             '../data/subm020': 1,
             '../data/subm019': 1,
@@ -94,31 +94,31 @@ def main(write_submission=True):
             '../data/subm029': 1,
             '../data/subm028': 1,
             '../data/subm026': 1,
-            '../data/subm025': 1,
+            '../data/subm025': 2,
             '../data/subm024': 1,
-            '../data/subm023': 1,
+            '../data/subm023': 2,
             '../data/subm022': 1,
             '../data/subm020': 1,
-            #'../data/subm019': 1,
+            '../data/subm019': 1,
         },
         2: {
             '../data/subm029': 1,
             '../data/subm028': 1,
             '../data/subm026': 1,
-            '../data/subm025': 1,
+            '../data/subm025': 2,
             '../data/subm024': 1,
-            '../data/subm023': 1,
+            '../data/subm023': 2,
             '../data/subm022': 1,
             '../data/subm020': 1,
-            #'../data/subm019': 1,
+            '../data/subm019': 1,
         },
         3: {
-            #'../data/subm029': 1,
-            #'../data/subm028': 1,
-            #'../data/subm026': 1,
-            '../data/subm025': 1,
+            '../data/subm029': 1,
+            '../data/subm028': 1,
+            '../data/subm026': 1,
+            '../data/subm025': 2,
             '../data/subm024': 1,
-            '../data/subm023': 1,
+            '../data/subm023': 2,
             '../data/subm022': 1,
             '../data/subm020': 1,
             '../data/subm019': 1,
@@ -127,12 +127,12 @@ def main(write_submission=True):
             '../data/subm029': 1,
             '../data/subm028': 1,
             '../data/subm026': 1,
-            '../data/subm025': 1,
+            '../data/subm025': 2,
             '../data/subm024': 1,
-            '../data/subm023': 1,
+            '../data/subm023': 2,
             '../data/subm022': 1,
             '../data/subm020': 1,
-            #'../data/subm019': 1,
+            '../data/subm019': 1,
         }
     }
 
@@ -172,7 +172,7 @@ def main(write_submission=True):
     final = np.round(preds/5.0).astype(np.uint8)
 
     if write_submission:
-        output_csv = '../submissions/subm_029.csv'
+        output_csv = '../submissions/subm_030.csv'
         print('writing to ', output_csv)
         
         generate_submission(output_csv, final)
