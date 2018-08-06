@@ -48,7 +48,7 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
         step = state['step']
         valid_best = state['valid_best']
         model.load_state_dict(state['model'])
-        optimizer.load_state_dict(state['optimizer'])
+        optimizer.load_state_dict(state['optimizer'])        
         print('Restored model, epoch {}, step {:,}, valid_best {}'.format(epoch, step, valid_best))
     else:
         epoch = 1

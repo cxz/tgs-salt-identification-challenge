@@ -78,6 +78,7 @@ def main():
         batch_size=len(device_ids),
         workers=args.workers)
 
+    # optimizer = Adam([p for p in model.parameters() if p.requires_grad], lr=args.lr)
     optimizer = Adam(model.parameters(), lr=args.lr)
 
     # loss = LossBinary(jaccard_weight=args.jaccard_weight)

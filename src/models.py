@@ -14,7 +14,8 @@ archs = [
     'unet-dpn92',
     #'unet-dpn131',
     'unet-incv3',
-    'unet-serefinenet101'
+    'unet-serefinenet101',
+    'unet-serefinenet152'
 ]
 
 def get_model(model_path, model_type):
@@ -39,8 +40,15 @@ def get_model(model_path, model_type):
         model = DPNUnet(1, 3)
 
     elif model_type == 'unet-serefinenet101':
-        from zoo.crafz.make_model import make_model
-        model = make_model()
+        from zoo.creafz.make_model import make_model
+        # model = make_model('se_refinenet_128')
+        model = make_model('se_refinenet_128_all_layers_unfrozen')        
+        
+    elif model_type == 'unet-serefinenet152':
+        from zoo.creafz.make_model import make_model
+        # model = make_model('se_refinenet_128_all_layers_unfrozen')
+        # model = make_model('se_refinenet_128')
+        raise # set encoder to resnet152
 
     #elif model_type == 'unet-dpn131':
     #    from zoo.albu_zoo.unet import DPNUnet

@@ -65,8 +65,10 @@ def generate_submission(out_csv, preds):
     sub.to_csv(out_csv, index=False)
 
 
-def main(write_submission=False):
+def main(write_submission=True):
     experiments = {
+        '../data/subm029': 1,
+        '../data/subm028': 1,
         '../data/subm026': 1,
         '../data/subm025': 1,
         '../data/subm024': 1,
@@ -75,6 +77,65 @@ def main(write_submission=False):
         '../data/subm020': 1,
         '../data/subm019': 1,
     }
+
+    fold_weights = {
+        0: {
+            #'../data/subm029': 1,
+            #'../data/subm028': 1,
+            '../data/subm026': 1,
+            '../data/subm025': 1,
+            '../data/subm024': 1,
+            '../data/subm023': 1,
+            '../data/subm022': 1,
+            '../data/subm020': 1,
+            '../data/subm019': 1,
+        },
+        1: {
+            '../data/subm029': 1,
+            '../data/subm028': 1,
+            '../data/subm026': 1,
+            '../data/subm025': 1,
+            '../data/subm024': 1,
+            '../data/subm023': 1,
+            '../data/subm022': 1,
+            '../data/subm020': 1,
+            #'../data/subm019': 1,
+        },
+        2: {
+            '../data/subm029': 1,
+            '../data/subm028': 1,
+            '../data/subm026': 1,
+            '../data/subm025': 1,
+            '../data/subm024': 1,
+            '../data/subm023': 1,
+            '../data/subm022': 1,
+            '../data/subm020': 1,
+            #'../data/subm019': 1,
+        },
+        3: {
+            #'../data/subm029': 1,
+            #'../data/subm028': 1,
+            #'../data/subm026': 1,
+            '../data/subm025': 1,
+            '../data/subm024': 1,
+            '../data/subm023': 1,
+            '../data/subm022': 1,
+            '../data/subm020': 1,
+            '../data/subm019': 1,
+        },
+        4: {
+            '../data/subm029': 1,
+            '../data/subm028': 1,
+            '../data/subm026': 1,
+            '../data/subm025': 1,
+            '../data/subm024': 1,
+            '../data/subm023': 1,
+            '../data/subm022': 1,
+            '../data/subm020': 1,
+            #'../data/subm019': 1,
+        }
+    }
+
     
     preds = np.zeros((18000, 101, 101, 1), dtype=np.float32)
     
@@ -83,11 +144,11 @@ def main(write_submission=False):
                         
         # merge fold predictions for val set
         val_preds = []
-        for exp, weight in experiments.items():
+        for exp, weight in fold_weights[fold].items():
             val_preds.append(weight * np.load(os.path.join(exp, f"val_preds_fold{fold}.npy")))
 
         # weighted average
-        val_preds = np.sum(val_preds, axis=0) / sum(experiments.values())
+        val_preds = np.sum(val_preds, axis=0) / sum(fold_weights[fold].values())
 
         # find threshold
         _, filenames = dataset.get_split(fold)
@@ -99,19 +160,19 @@ def main(write_submission=False):
         print(f"fold {fold} -- iou: ", best_thres_tta, max(thres_ioc))  
         
         fold_preds = []
-        for exp, weight in experiments.items():
+        for exp, weight in fold_weights[fold].items():
             fold_preds.append(weight * np.load(os.path.join(exp, f"test_preds_fold{fold}.npy")))
 
         # simple average
-        fold_preds = np.sum(fold_preds, axis=0) / sum(experiments.values())
+        fold_preds = np.sum(fold_preds, axis=0) / sum(fold_weights[fold].values())
         fold_preds_thresholded = (fold_preds > best_thres_tta).astype(np.uint8)
         preds += fold_preds_thresholded
 
     # majority voting
-    final = np.round(preds).astype(np.uint8)
+    final = np.round(preds/5.0).astype(np.uint8)
 
     if write_submission:
-        output_csv = '../submissions/subm_026.csv'
+        output_csv = '../submissions/subm_029.csv'
         print('writing to ', output_csv)
         
         generate_submission(output_csv, final)
