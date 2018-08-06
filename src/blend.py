@@ -64,16 +64,17 @@ def generate_submission(out_csv, preds):
     sub = pd.DataFrame(rows, columns=['id', 'rle_mask'])
     sub.to_csv(out_csv, index=False)
 
-    
-def main(write_submission=True):
-    experiments = [
-        '../data/subm025',
-        '../data/subm024',
-        '../data/subm023',
-        '../data/subm022',
-        '../data/subm020',
-        '../data/subm019'
-    ]
+
+def main(write_submission=False):
+    experiments = {
+        '../data/subm026': 1,
+        '../data/subm025': 1,
+        '../data/subm024': 1,
+        '../data/subm023': 1,
+        '../data/subm022': 1,
+        '../data/subm020': 1,
+        '../data/subm019': 1,
+    }
     
     preds = np.zeros((18000, 101, 101, 1), dtype=np.float32)
     
@@ -82,35 +83,35 @@ def main(write_submission=True):
                         
         # merge fold predictions for val set
         val_preds = []
-        for exp in experiments:
-            val_preds.append(np.load(os.path.join(exp, f"val_preds_fold{fold}.npy")))
-        
-        # simple average
-        val_preds = np.mean(val_preds, axis=0)
-        
+        for exp, weight in experiments.items():
+            val_preds.append(weight * np.load(os.path.join(exp, f"val_preds_fold{fold}.npy")))
+
+        # weighted average
+        val_preds = np.sum(val_preds, axis=0) / sum(experiments.values())
+
         # find threshold
         _, filenames = dataset.get_split(fold)
         masks = np.array([load_train_mask(image_id) for image_id in filenames])
-        
-        thres = np.linspace(0.0, 0.9, 20)
+
+        thres = np.linspace(0.2, 0.6, 20)
         thres_ioc = [iou_metric_batch(masks, np.int32(val_preds > t)) for t in thres]
         best_thres_tta = thres[np.argmax(thres_ioc)]
         print(f"fold {fold} -- iou: ", best_thres_tta, max(thres_ioc))  
         
         fold_preds = []
-        for exp in experiments:
-            fold_preds.append(np.load(os.path.join(exp, f"test_preds_fold{fold}.npy")))
-            
+        for exp, weight in experiments.items():
+            fold_preds.append(weight * np.load(os.path.join(exp, f"test_preds_fold{fold}.npy")))
+
         # simple average
-        fold_preds = np.mean(fold_preds, axis=0)
+        fold_preds = np.sum(fold_preds, axis=0) / sum(experiments.values())
         fold_preds_thresholded = (fold_preds > best_thres_tta).astype(np.uint8)
         preds += fold_preds_thresholded
-    
+
     # majority voting
-    final = np.round(preds/5.0).astype(np.uint8)
-    
+    final = np.round(preds).astype(np.uint8)
+
     if write_submission:
-        output_csv = '../submissions/subm_025.csv'
+        output_csv = '../submissions/subm_026.csv'
         print('writing to ', output_csv)
         
         generate_submission(output_csv, final)
@@ -118,6 +119,3 @@ def main(write_submission=True):
     
 if __name__ == '__main__':
     main()
-
-    
-    
