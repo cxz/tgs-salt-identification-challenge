@@ -12,7 +12,7 @@ archs = [
     'unet-vgg11', 
     'unet-vgg16',
     'unet-dpn92',
-    #'unet-dpn131',
+    'unet-dpn131',
     'unet-incv3',
     'unet-serefinenet101',
     'unet-serefinenet152'
@@ -50,9 +50,9 @@ def get_model(model_path, model_type):
         # model = make_model('se_refinenet_128')
         raise # set encoder to resnet152
 
-    #elif model_type == 'unet-dpn131':
-    #    from zoo.albu_zoo.unet import DPNUnet
-    #    model = DPNUnet(1, encoder_name='dpn131')
+    elif model_type == 'unet-dpn131':
+        from zoo.albu_zoo.unet import DPNUnet
+        model = DPNUnet(1, encoder_name='dpn131')
 
     elif model_type == 'unet-incv3':
         from zoo.albu_zoo.unet import Incv3
@@ -211,8 +211,13 @@ class UNetResNet(nn.Module):
 if __name__ == '__main__':
     import numpy as np
     # model = UNetResNet(encoder_depth=101, num_classes=1, num_filters=16, dropout_2d=0.1, pretrained=True)
-    model = UNetResNet(encoder_depth=101, num_classes=1, num_filters=16, dropout_2d=0.1, pretrained=True)
+    #model = UNetResNet(encoder_depth=101, num_classes=1, num_filters=16, dropout_2d=0.1, pretrained=True)
     # x1 = torch.from_numpy(np.zeros((32, 3, 128, 128), dtype=np.float32))
     # x2 = torch.from_numpy(np.zeros((32, 2), dtype=np.float32))
     # model.forward(x1, x2)
     # print('.')
+    
+    import pretrainedmodels
+    model_name = 'resnext101_64x4d'
+    model = pretrainedmodels.__dict__[model_name](num_classes=1000, pretrained='imagenet')
+    print(model)

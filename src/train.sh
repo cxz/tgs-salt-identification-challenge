@@ -5,7 +5,7 @@
 #    python train.py --name exp20 --model unet-resnet101 --lr 0.0001 --n-epochs 250 --fold $i --loss focal --focal-gamma 0.5
 #done
 
-N_EPOCHS=200
+N_EPOCHS=250
 LR=0.0001
 
 #for i in 0 1 2 3 4
@@ -58,6 +58,11 @@ LR=0.0001
 #    python train.py --name exp29-unet-serefinenet101 --model unet-serefinenet101 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard
 #done
 
+
+for i in 2
+do
+    python train.py --name exp31-unet-dpn131 --model unet-dpn131 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard
+done
 
 
 

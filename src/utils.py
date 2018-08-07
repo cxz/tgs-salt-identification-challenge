@@ -103,12 +103,13 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
             ])
             scores_df = pd.DataFrame(scores, columns=['fold', 'epoch', 'val_loss', 'val_iou'])
             scores_df.to_csv(str(scores_fname), index=False)            
-                        
+
             if valid_best is None or valid_metrics['val_iou'] > valid_best:
                 valid_best = valid_metrics['val_iou']
                 save(model, optimizer, model_path, epoch, step, valid_best)
 
             scheduler.step(valid_metrics['val_loss'])
+            
         except KeyboardInterrupt:
             tq.close()
             # print('Ctrl+C, saving snapshot')
