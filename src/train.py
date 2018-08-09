@@ -35,6 +35,7 @@ def main():
     arg('--model', type=str, default=models.archs[0], choices=models.archs)
     arg('--loss', type=str, default='focal', choices=['focal', 'lovasz', 'bjd', 'bce_jaccard'])
     arg('--focal-gamma', type=float, default=.5)
+    arg('--weighted-sampler', action="store_true")
     arg('--resume', action="store_true")
     args = parser.parse_args()
 
@@ -68,6 +69,7 @@ def main():
         train_ids,
         transform=dataset.train_transform(),
         shuffle=True,
+        weighted_sampling=args.weighted_sampler,
         batch_size=args.batch_size,
         workers=args.workers)
 

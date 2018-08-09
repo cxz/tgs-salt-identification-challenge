@@ -3,6 +3,8 @@ import torch
 import numpy as np
 import pandas as pd
 import cv2
+from sklearn.model_selection import KFold
+
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 
@@ -12,7 +14,28 @@ from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, ElasticT
 SIZE = 128
 PATH = '../input'
 
+def generate_folds_by_depth():
+    n_fold = 5
+    depths = pd.read_csv(os.path.join(PATH, 'depths.csv'))
+    depths.sort_values('z', inplace=True)
+    depths.drop('z', axis=1, inplace=True)
+    depths['fold'] = (list(range(n_fold))*depths.shape[0])[:depths.shape[0]]
+    print(depths.head())
+    depths.to_csv(os.path.join(PATH, 'folds.csv'), index=False)
 
+#def generate_folds_by_density():
+#    def load_train_mask(image_id):
+#        mask = cv2.imread(os.path.join('../input/train/masks', '%s.png' % image_id), 0)
+#        return (mask / 255.0).astype(np.uint8)
+#    
+#    n_fold = 5
+#    df = pd.read_csv(os.path.join('../input', 'train.csv'))
+#    df['amounts'] = [np.sum(load_train_mask(x)) for x in df.id.values]    
+#    df.sort_values('amounts', inplace=True)
+#    df['fold'] = (list(range(n_fold))*df.shape[0])[:df.shape[0]]
+#    print(df.head())
+#    df[['id', 'fold']].to_csv(os.path.join(PATH, 'folds_density.csv'), index=False)    
+    
 def get_split(fold):
     train_df = pd.read_csv(os.path.join(PATH, 'train.csv'))
     train_ids = train_df.id.values
@@ -56,13 +79,27 @@ def val_transform():
     ], p=1)
 
 
-def make_loader(ids, shuffle=False, transform=None, mode='train', batch_size=32, workers=4):
+def make_loader(ids, shuffle=False, transform=None, mode='train', batch_size=32, workers=4, weighted_sampling=False):
     assert transform is not None
+    
+    sampler = None
+    if mode == 'train' and weighted_sampling:
+        def load_mask(image_id):
+            path = os.path.join(PATH, 'train', 'masks', '%s.png' % image_id)
+            mask = cv2.imread(path, 0)
+            return (mask / 255.0).astype(np.uint8)
+            
+        masks = [load_mask(x) for x in ids]
+        weights = [2 if 50 <= np.sum(m) <= 500 else 1 for m in masks]        
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(ids))
+        shuffle = False # mutualy exclusive
+        
     return DataLoader(
         dataset=TGSDataset(ids, transform=transform, mode=mode),
         shuffle=shuffle,
         num_workers=workers,
         batch_size=batch_size,
+        sampler=sampler,
         pin_memory=torch.cuda.is_available()
     )
 
@@ -118,11 +155,12 @@ class TGSDataset(Dataset):
 
 
 if __name__ == '__main__':
-    a, b = get_split(0)
-    print(len(a), len(b))
-    loader = make_loader(b, transform=train_transform())
-    for inputs, target in loader:
-        inputs = inputs.data.cpu().numpy()
-        target = target.data.cpu().numpy()
-        print(inputs.shape, np.max(inputs), target.shape, np.max(target))
-        break
+    print('empty.')
+    #a, b = get_split(0)
+    #print(len(a), len(b))
+    #loader = make_loader(b, transform=train_transform())
+    #for inputs, target in loader:
+    #    inputs = inputs.data.cpu().numpy()
+    #    target = target.data.cpu().numpy()
+    #    print(inputs.shape, np.max(inputs), target.shape, np.max(target))
+    #    break

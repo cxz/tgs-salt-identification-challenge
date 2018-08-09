@@ -8,6 +8,10 @@ def iou_metric(y_true_in, y_pred_in, print_table=False):
     
     true_objects = 2
     pred_objects = 2
+    
+    #uncommented so I can compare metric values from the past
+    #if np.sum(y_true_in) == 0:
+    #    return 1 if np.sum(y_pred_in) == 0 else 0
 
     intersection = np.histogram2d(labels.flatten(), y_pred.flatten(), bins=(true_objects, pred_objects))[0]
 
