@@ -90,7 +90,7 @@ def make_loader(ids, shuffle=False, transform=None, mode='train', batch_size=32,
             return (mask / 255.0).astype(np.uint8)
             
         masks = [load_mask(x) for x in ids]
-        weights = [2 if 50 <= np.sum(m) <= 500 else 1 for m in masks]        
+        weights = [2 if 70 <= np.sum(m) <= 800 else 1 for m in masks]        
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(ids))
         shuffle = False # mutualy exclusive
         

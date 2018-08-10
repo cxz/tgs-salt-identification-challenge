@@ -63,9 +63,20 @@ LR=0.0001
 #    python train.py --name exp31-unet-dpn131 --model unet-dpn131 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard
 #done
 
-for i in 0 1 2 3 4
-do 
-    python train.py --name exp23-dpn92-sample-weight --model unet-dpn92 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard --weighted-sampler
-done
+#for i in 0 1 2 3 4
+#expname was 23 by mistake
+#do 
+#    python train.py --name exp23-dpn92-sample-weight --model unet-dpn92 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_jaccard --weighted-sampler
+#done
 
+
+#for i in 0 1 2 3 4
+#do
+#    python train.py --name exp33-resnet50-weighted-bce1-dice2 --model unet-resnet50 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_dice
+#done
+
+for i in 2 3 4
+do
+    python train.py --name exp34-unet-dpn131-weighted-bce1-dice2 --model unet-dpn131 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_dice
+done
 

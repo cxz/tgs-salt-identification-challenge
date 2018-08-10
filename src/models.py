@@ -6,7 +6,7 @@ import other_models
 import unet_resnet50
 
 archs = [
-    'unet-resnet50', 
+    'unet-resnet50',     
     'unet-resnet101', 
     'unet-resnet152', 
     'unet-vgg11', 
@@ -34,7 +34,7 @@ def get_model(model_path, model_type):
         
     elif model_type == 'unet-resnet50':
         model = unet_resnet50.UNet(num_classes=1, num_filters=32, pretrained=True)
-
+        
     elif model_type == 'unet-dpn92':
         from zoo.albu_zoo.unet import DPNUnet
         model = DPNUnet(1, 3)

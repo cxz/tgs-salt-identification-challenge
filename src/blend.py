@@ -65,15 +65,15 @@ def generate_submission(out_csv, preds):
     sub.to_csv(out_csv, index=False)
 
 
-def main(write_submission=True):
+def main(write_submission=False):
     experiments = {
         '../data/subm032': 1,
         '../data/subm031': 1,
-        '../data/subm029': 1,
+        #'../data/subm029': 1,
         '../data/subm028': 1,
-        '../data/subm026': 1,
+        #'../data/subm026': 1,
         '../data/subm025': 1,
-        '../data/subm024': 1,
+        #'../data/subm024': 1,
         '../data/subm023': 1,
         '../data/subm022': 1,
         #'../data/subm020': 1,

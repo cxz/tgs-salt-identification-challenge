@@ -33,7 +33,7 @@ def main():
     arg('--workers', type=int, default=4)
     arg('--seed', type=int, default=0)
     arg('--model', type=str, default=models.archs[0], choices=models.archs)
-    arg('--loss', type=str, default='focal', choices=['focal', 'lovasz', 'bjd', 'bce_jaccard'])
+    arg('--loss', type=str, default='focal', choices=['focal', 'lovasz', 'bjd', 'bce_jaccard', 'bce_dice'])
     arg('--focal-gamma', type=float, default=.5)
     arg('--weighted-sampler', action="store_true")
     arg('--resume', action="store_true")
@@ -89,10 +89,14 @@ def main():
         loss = FocalLoss(args.focal_gamma)
     elif args.loss == 'lovasz':
         loss = LossLovasz()
-    elif args.loss == 'bjd':
-        loss = BCEDiceJaccardLoss({'bce': 0.5, 'jaccard': 0.5, 'dice': 0.0})
+    elif args.loss == 'bjd':               
+        loss = BCEDiceJaccardLoss({'bce': 0.25, 'jaccard': None, 'dice': 0.75})
     elif args.loss == 'bce_jaccard':
         loss = LossBinary(args.jaccard_weight)
+    elif args.loss == 'bce_dice':
+        import loss2
+        loss = loss2.make_loss()
+        
     else:
         raise NotImplementedError
 
