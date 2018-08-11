@@ -65,8 +65,10 @@ def generate_submission(out_csv, preds):
     sub.to_csv(out_csv, index=False)
 
 
-def main(write_submission=False):
+def main(write_submission=True):
     experiments = {
+        '../data/subm034': 1,
+        '../data/subm033': 1,
         '../data/subm032': 1,
         '../data/subm031': 1,
         #'../data/subm029': 1,
@@ -115,8 +117,15 @@ def main(write_submission=False):
     # majority voting
     final = np.round(preds/5.0).astype(np.uint8)
 
+    # post processing
+    for idx in range(final.shape[0]):
+        amount = np.sum(final[idx])
+        # find exact threshold on validation set using blend
+        if 0 < amount <= 35:
+            final[idx] = 0
+
     if write_submission:
-        output_csv = '../submissions/subm_032.csv'
+        output_csv = '../submissions/subm_035.csv'
         print('writing to ', output_csv)
         
         generate_submission(output_csv, final)

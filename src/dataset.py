@@ -112,6 +112,7 @@ class TGSDataset(Dataset):
             self.ids_ = pd.read_csv(os.path.join(PATH, 'train.csv')).id.values
             self.local_ids = ids
             self.real_idx = dict([(id_, pos) for pos, id_ in enumerate(self.ids_)])
+            # self.extra = np.load('../data/cache/X_train_stage1oof_843.npy')
         else:
             self.ids_ = pd.read_csv(os.path.join(PATH, 'sample_submission.csv')).id.values
             self.local_ids = ids
@@ -141,6 +142,14 @@ class TGSDataset(Dataset):
     def __getitem__(self, idx):
         image_id = self.local_ids[idx]
         data = {'image': self.load_image_extra(image_id)}
+        
+        if False:
+            #x1 = self.load_image_extra(image_id)
+            x2 = self.extra[self.real_idx[self.local_ids[idx]]]
+            #x = np.zeros((101, 101, 1 + self.extra.shape[3]), dtype=np.float32)
+            #x[..., 0] = x1[..., 0]
+            #x[..., 1:] = x2
+            # qdata = {'image': x2}
 
         if self.mode != 'test':
             data['mask'] = self.load_mask(image_id)
@@ -156,11 +165,12 @@ class TGSDataset(Dataset):
 
 if __name__ == '__main__':
     print('empty.')
-    #a, b = get_split(0)
-    #print(len(a), len(b))
-    #loader = make_loader(b, transform=train_transform())
+    a, b = get_split(0)
+    print(len(a), len(b))
+    #loader = make_loader(b, transform=val_transform())
     #for inputs, target in loader:
     #    inputs = inputs.data.cpu().numpy()
     #    target = target.data.cpu().numpy()
     #    print(inputs.shape, np.max(inputs), target.shape, np.max(target))
-    #    break
+            
+        
