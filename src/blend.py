@@ -26,6 +26,7 @@ import utils
 
 from super_pool import SuperPool
 
+
 def load_train_mask(image_id):
     mask = cv2.imread(os.path.join('../input/train/masks', '%s.png' % image_id), 0)
     return (mask / 255.0).astype(np.uint8)
@@ -67,6 +68,7 @@ def generate_submission(out_csv, preds):
 
 def main(write_submission=True):
     experiments = {
+        '../data/subm036': 1,
         '../data/subm034': 1,
         '../data/subm033': 1,
         '../data/subm032': 1,
@@ -81,8 +83,7 @@ def main(write_submission=True):
         #'../data/subm020': 1,
         #'../data/subm019': 1,
     }
-    
-    
+
     preds = np.zeros((18000, 101, 101, 1), dtype=np.float32)
     
     for fold in range(5):
@@ -125,7 +126,7 @@ def main(write_submission=True):
             final[idx] = 0
 
     if write_submission:
-        output_csv = '../submissions/subm_035.csv'
+        output_csv = '../submissions/subm_038.csv'
         print('writing to ', output_csv)
         
         generate_submission(output_csv, final)

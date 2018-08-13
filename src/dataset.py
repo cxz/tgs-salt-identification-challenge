@@ -83,19 +83,28 @@ def make_loader(ids, shuffle=False, transform=None, mode='train', batch_size=32,
     assert transform is not None
     
     sampler = None
+
+    if mode == 'train':
+        suspicious = set(pd.read_csv('../data/cache/suspicious.csv').image_id.values)
+        filtered_ids = [id_ for id_ in ids if id_ not in suspicious]
+    else:
+        filtered_ids = ids
+
     if mode == 'train' and weighted_sampling:
         def load_mask(image_id):
             path = os.path.join(PATH, 'train', 'masks', '%s.png' % image_id)
             mask = cv2.imread(path, 0)
             return (mask / 255.0).astype(np.uint8)
-            
-        masks = [load_mask(x) for x in ids]
+
+        masks = [load_mask(x) for x in filtered_ids]
+
         weights = [2 if 70 <= np.sum(m) <= 800 else 1 for m in masks]        
-        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(ids))
-        shuffle = False # mutualy exclusive
-        
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(filtered_ids))
+        shuffle = False  # mutualy exclusive
+
+    print("===", mode, len(filtered_ids))
     return DataLoader(
-        dataset=TGSDataset(ids, transform=transform, mode=mode),
+        dataset=TGSDataset(filtered_ids, transform=transform, mode=mode),
         shuffle=shuffle,
         num_workers=workers,
         batch_size=batch_size,
