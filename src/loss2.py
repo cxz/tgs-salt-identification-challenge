@@ -5,13 +5,15 @@ from torch.autograd import Variable
 import torch.nn as nn
 from functools import partial
 
-def make_loss():
+
+def make_loss(bce_weight, dice_weight):
     return partial(mixed_dice_bce_loss,
                    dice_loss=multiclass_dice_loss,
                    bce_loss=nn.BCEWithLogitsLoss(),
                    dice_activation='sigmoid',
-                   dice_weight=2,
-                   bce_weight=1)
+                   dice_weight=dice_weight,
+                   bce_weight=bce_weight)
+
 
 class DiceLoss(nn.Module):
     def __init__(self, smooth=0, eps=1e-7):

@@ -95,7 +95,9 @@ def main():
         loss = LossBinary(args.jaccard_weight)
     elif args.loss == 'bce_dice':
         import loss2
-        loss = loss2.make_loss()
+        bce_weight = 1
+        dice_weight = 3
+        loss = loss2.make_loss(bce_weight, dice_weight)
         
     else:
         raise NotImplementedError
