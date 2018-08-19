@@ -63,7 +63,7 @@ if __name__ == '__main__':
     #arg('--model_type', type=str, default='unet-resnet101', help='', choices=['unet-resnet101'])
     #arg('--output_path', type=str, help='', default='runs/inference')
     arg('--batch-size', type=int, default=32)
-    #arg('--fold', type=int, default=-1, choices=[0, 1, 2, 3, -1], help='-1: all folds')    
+    arg('--fold', type=int, default=-1, choices=[0, 1, 2, 3, 4, -1], help='-1: all folds')    
     arg('--workers', type=int, default=8)
     args = parser.parse_args()
     
@@ -74,7 +74,8 @@ if __name__ == '__main__':
     model_type = config['model']
 
     test_ids = dataset.get_test_ids()
-    for fold in range(5):
+    folds = list(range(5)) if args.fold == -1 else [args.fold]
+    for fold in folds:
         print('processing fold ', fold)
         model_path = os.path.join(args.path, f"model_{fold}.pth")
         model = models.get_model(model_path, model_type=model_type)

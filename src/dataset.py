@@ -61,13 +61,13 @@ def train_transform():
         ElasticTransform(
             p=0.25,
             alpha=1,
-            sigma=20,
-            alpha_affine=20),
+            sigma=30,          # TODO
+            alpha_affine=30),  # TODO
         ShiftScaleRotate(
             p=0.5,
-            rotate_limit=.0,
-            shift_limit=.25,
-            scale_limit=.05,
+            rotate_limit=.15,   # TODO
+            shift_limit=.25,    # TODO
+            scale_limit=.25,    # TODO
             interpolation=cv2.INTER_CUBIC,
             border_mode=cv2.BORDER_REFLECT_101),
     ], p=1)
@@ -79,12 +79,12 @@ def val_transform():
     ], p=1)
 
 
-def make_loader(ids, shuffle=False, transform=None, mode='train', batch_size=32, workers=4, weighted_sampling=False):
+def make_loader(ids, shuffle=False, transform=None, mode='train', batch_size=32, workers=4, weighted_sampling=False, remove_suspicious=False):
     assert transform is not None
     
     sampler = None
 
-    if mode == 'train':
+    if mode == 'train' and remove_suspicious:
         suspicious = set(pd.read_csv('../data/cache/suspicious.csv').image_id.values)
         filtered_ids = [id_ for id_ in ids if id_ not in suspicious]
     else:
@@ -98,11 +98,10 @@ def make_loader(ids, shuffle=False, transform=None, mode='train', batch_size=32,
 
         masks = [load_mask(x) for x in filtered_ids]
 
-        weights = [2 if 70 <= np.sum(m) <= 800 else 1 for m in masks]        
+        weights = [1.25 if 50 <= np.sum(m) <= 500 else 1 for m in masks]        
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(filtered_ids))
         shuffle = False  # mutualy exclusive
 
-    print("===", mode, len(filtered_ids))
     return DataLoader(
         dataset=TGSDataset(filtered_ids, transform=transform, mode=mode),
         shuffle=shuffle,
@@ -182,4 +181,3 @@ if __name__ == '__main__':
     #    target = target.data.cpu().numpy()
     #    print(inputs.shape, np.max(inputs), target.shape, np.max(target))
             
-        

@@ -67,9 +67,13 @@ def generate_submission(out_csv, preds):
 
 
 def main(write_submission=True):    
+
     experiments = {
-        '../data/subm040': 1,
-        '../data/subm036': 1,
+        '../data/subm048': 4,
+        '../data/subm045': 2,
+        #'../data/subm043': 1,
+        #'../data/subm040': 1,
+        '../data/subm036': 2,
         '../data/subm034': 1,
         '../data/subm033': 1,
         '../data/subm032': 1,
@@ -120,14 +124,17 @@ def main(write_submission=True):
     final = np.round(preds/5.0).astype(np.uint8)
 
     # post processing
-    for idx in range(final.shape[0]):
-        amount = np.sum(final[idx])
-        # find exact threshold on validation set using blend
-        if 0 < amount <= 35:
-            final[idx] = 0
+    # gave .001 improvement from .843 to .844
+    # right now it's making preds worse.
+    if False:
+        for idx in range(final.shape[0]):
+            amount = np.sum(final[idx])
+            # find exact threshold on validation set using blend
+            if 0 < amount <= 35:
+                final[idx] = 0
 
     if write_submission:
-        output_csv = '../submissions/subm_041.csv'
+        output_csv = '../submissions/subm_048.csv'
         print('writing to ', output_csv)
         
         generate_submission(output_csv, final)

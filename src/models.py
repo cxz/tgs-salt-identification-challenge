@@ -4,6 +4,7 @@ from torch.nn import functional as F
 import torchvision
 import other_models
 import unet_resnet50
+from zoo.albu_zoo.unet import DPNUnet
 
 archs = [
     'unet-resnet50',     
@@ -13,6 +14,7 @@ archs = [
     'unet-vgg16',
     'unet-dpn92',
     'unet-dpn131',
+    'unet-dpn107',
     'unet-incv3',
     'unet-serefinenet101',
     'unet-serefinenet152'
@@ -36,8 +38,7 @@ def get_model(model_path, model_type):
         model = unet_resnet50.UNet(num_classes=1, num_filters=32, pretrained=True)
         
     elif model_type == 'unet-dpn92':
-        from zoo.albu_zoo.unet import DPNUnet
-        model = DPNUnet(1, 3)
+        model = DPNUnet(num_classes=1, num_channels=1, encoder_name='dpn92')
 
     elif model_type == 'unet-serefinenet101':
         from zoo.creafz.make_model import make_model
@@ -50,9 +51,11 @@ def get_model(model_path, model_type):
         # model = make_model('se_refinenet_128')
         raise # set encoder to resnet152
 
-    elif model_type == 'unet-dpn131':
-        from zoo.albu_zoo.unet import DPNUnet
-        model = DPNUnet(1, encoder_name='dpn131')
+    elif model_type == 'unet-dpn131':        
+        model = DPNUnet(num_classes=1, num_channels=1, encoder_name='dpn131')
+    
+    elif model_type == 'unet-dpn107':
+        model = DPNUnet(num_classes=1, num_channels=1, encoder_name='dpn107')
 
     elif model_type == 'unet-incv3':
         from zoo.albu_zoo.unet import Incv3

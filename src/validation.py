@@ -22,7 +22,12 @@ def validation_binary(model: nn.Module, criterion, valid_loader):
             targets_npy = targets.cpu().numpy()
             outputs_npy = outputs.cpu().numpy()
 
-            iou += [metric.iou_metric(targets_npy, (outputs_npy > .5))]
+            # iou per image, not batch
+            for t, o in zip(targets_npy, outputs_npy):
+                iou.append(metric.iou_metric(t, o > .5))
+                
+            # in batch it's distorted
+            #iou += [metric.iou_metric(targets_npy, (outputs_npy > .5))]
 
         valid_loss = np.mean(losses)  # type: float
         valid_iou = np.mean(iou).astype(np.float64)        

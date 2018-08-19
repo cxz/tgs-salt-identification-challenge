@@ -10,6 +10,7 @@ import pandas as pd
 import torch
 import tqdm
 from torch import nn
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 def fold_snapshot(output_dir, fold):
@@ -48,8 +49,17 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
         step = state['step']
         valid_best = state['valid_best']
         model.load_state_dict(state['model'])
-        optimizer.load_state_dict(state['optimizer'])        
+        # optimizer.load_state_dict(state['optimizer']) # causing oom due to history
+        # set_learning_rate(optimizer, 1e-5)
         print('Restored model, epoch {}, step {:,}, valid_best {}'.format(epoch, step, valid_best))
+        
+        from torch.optim import SGD, Adam
+        optimizer = Adam(model.parameters(), lr=1e-5)
+        #scheduler = ReduceLROnPlateau(optimizer, verbose=True, patience=20, min_lr=1e-7, factor=0.5)
+        del state
+        # optimizer = SGD(model.parameters(), lr=1e-5)
+                
+        
     else:
         epoch = 1
         step = 0

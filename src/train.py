@@ -77,7 +77,8 @@ def main():
         val_ids,
         transform=dataset.val_transform(),
         shuffle=False,
-        batch_size=len(device_ids),
+        #batch_size=len(device_ids),
+        batch_size=args.batch_size, # len(device_ids),
         workers=args.workers)
 
     # optimizer = Adam([p for p in model.parameters() if p.requires_grad], lr=args.lr)
@@ -96,7 +97,7 @@ def main():
     elif args.loss == 'bce_dice':
         import loss2
         bce_weight = 1
-        dice_weight = 3
+        dice_weight = 2
         loss = loss2.make_loss(bce_weight, dice_weight)
         
     else:
