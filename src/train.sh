@@ -91,9 +91,18 @@ LR=0.0001
 #    sleep 10
 #done
 
-for i in 3 1 0 2 4
-do
-    #--weighted-sampler 
-    python train.py --name exp48-dpn107 --model unet-dpn107 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss lovasz --batch-size 24 --resume
-    sleep 10
-done
+#for i in 0 1 2 3 4
+#do
+#    #--weighted-sampler
+#    python train.py --name exp48-dpn107 --model unet-dpn107 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss lovasz --batch-size 24 --resume
+#    sleep 10
+#done
+
+
+#same as 48 for folds 0 and 1.
+#for i in 0 1
+#do
+#    #--weighted-sampler
+#    python train.py --name exp49-dpn107 --model unet-dpn107 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss lovasz --batch-size 24 --resume
+#    sleep 10
+#done
