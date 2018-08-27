@@ -68,7 +68,7 @@ def generate_submission(out_csv, preds):
 
 def main(write_submission=True):    
     experiments = {
-        '../data/subm055': 4,
+        '../data/subm055': 12,
         '../data/subm056': 1,
         '../data/subm054': 1,
         '../data/subm052': 1,
@@ -138,7 +138,7 @@ def main(write_submission=True):
                 final[idx] = 0
 
     if write_submission:
-        output_csv = '../submissions/subm_059.csv'
+        output_csv = '../submissions/subm_062.csv'
         print('writing to ', output_csv)
         
         generate_submission(output_csv, final)
