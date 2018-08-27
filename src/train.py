@@ -35,7 +35,9 @@ def main():
     arg('--model', type=str, default=models.archs[0], choices=models.archs)
     arg('--loss', type=str, default='focal', choices=['focal', 'lovasz', 'bjd', 'bce_jaccard', 'bce_dice'])
     arg('--focal-gamma', type=float, default=.5)
+    arg('--num-channels', type=int, default=3)
     arg('--weighted-sampler', action="store_true")
+    arg('--ignore-empty-masks', action='store_true')
     arg('--resume', action="store_true")
     args = parser.parse_args()
 
@@ -67,14 +69,17 @@ def main():
 
     train_loader = dataset.make_loader(
         train_ids,
+        num_channels=args.num_channels,
         transform=dataset.train_transform(),
         shuffle=True,
         weighted_sampling=args.weighted_sampler,
+        ignore_empty_masks=args.ignore_empty_masks,
         batch_size=args.batch_size,
         workers=args.workers)
 
     valid_loader = dataset.make_loader(
         val_ids,
+        num_channels=args.num_channels,
         transform=dataset.val_transform(),
         shuffle=False,
         #batch_size=len(device_ids),
@@ -97,14 +102,14 @@ def main():
     elif args.loss == 'bce_dice':
         import loss2
         bce_weight = 1
-        dice_weight = 2
+        dice_weight = 3
         loss = loss2.make_loss(bce_weight, dice_weight)
         
     else:
         raise NotImplementedError
 
     validation = validation_binary
-    scheduler = ReduceLROnPlateau(optimizer, verbose=True, min_lr=1e-7, factor=0.5)
+    scheduler = ReduceLROnPlateau(optimizer, verbose=True, min_lr=1e-7, factor=0.8)
     snapshot = utils.fold_snapshot(output_dir, args.fold) if args.resume else None
 
     utils.train(

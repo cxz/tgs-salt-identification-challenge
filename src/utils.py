@@ -11,7 +11,7 @@ import torch
 import tqdm
 from torch import nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-
+from torch.optim import SGD, Adam
 
 def fold_snapshot(output_dir, fold):
     fname = os.path.join(output_dir, f"model_{fold}.pth")
@@ -49,15 +49,15 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
         step = state['step']
         valid_best = state['valid_best']
         model.load_state_dict(state['model'])
-        # optimizer.load_state_dict(state['optimizer']) # causing oom due to history
+        # optimizer.load_state_dict(state['optimizer'])  # causing oom if history too large
         # set_learning_rate(optimizer, 1e-5)
-        print('Restored model, epoch {}, step {:,}, valid_best {}'.format(epoch, step, valid_best))
+        print('Restored model, fold{}, epoch {}, step {:,}, valid_best {}'.format(fold, epoch, step, valid_best))
         
-        from torch.optim import SGD, Adam
+        #
         optimizer = Adam(model.parameters(), lr=1e-5)
-        #scheduler = ReduceLROnPlateau(optimizer, verbose=True, patience=20, min_lr=1e-7, factor=0.5)
-        del state
-        # optimizer = SGD(model.parameters(), lr=1e-5)
+        scheduler = ReduceLROnPlateau(optimizer, verbose=True, patience=10, min_lr=1e-7, factor=0.8)
+        #del state
+        
                 
         
     else:
@@ -68,7 +68,7 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
     model_path = output_dir / 'model_{fold}.pth'.format(fold=fold)
     
     scores_fname = output_dir / 'scores.csv'
-    scores = scores = pd.read_csv(scores_fname).values.tolist() if scores_fname.exists() else []
+    scores = pd.read_csv(scores_fname).values.tolist() if scores_fname.exists() else []
 
     steps_per_epoch = len(train_loader) * batch_size
     smooth_mean = 10

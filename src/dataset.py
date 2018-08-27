@@ -1,4 +1,6 @@
 import os
+import itertools
+
 import torch
 import numpy as np
 import pandas as pd
@@ -7,9 +9,10 @@ from sklearn.model_selection import KFold
 
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
+from torch.utils.data.sampler import Sampler
 
 from albumentations.torch.functional import img_to_tensor
-from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, ElasticTransform, Compose, PadIfNeeded, RandomCrop
+from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, ElasticTransform, Compose, PadIfNeeded, RandomCrop, Cutout, IAAAdditiveGaussianNoise
 
 SIZE = 128
 PATH = '../input'
@@ -58,6 +61,17 @@ def train_transform():
         PadIfNeeded(min_height=SIZE, min_width=SIZE),
         HorizontalFlip(
             p=0.5),
+        #Cutout(
+        #    p=0.25,
+        #    num_holes=1,
+        #    max_h_size=10,
+        #    max_w_size=10
+        #),
+        #IAAAdditiveGaussianNoise(
+        #    p=0.2,
+        #    loc=0.0,
+        #    scale=(.0, 0.001)            
+        #),
         ElasticTransform(
             p=0.25,
             alpha=1,
@@ -79,7 +93,16 @@ def val_transform():
     ], p=1)
 
 
-def make_loader(ids, shuffle=False, transform=None, mode='train', batch_size=32, workers=4, weighted_sampling=False, remove_suspicious=False):
+def make_loader(
+        ids,
+        shuffle=False,
+        num_channels=3,
+        transform=None, mode='train',
+        batch_size=32, workers=4,
+        ignore_empty_masks=False,
+        weighted_sampling=False,
+        remove_suspicious=False):
+
     assert transform is not None
     
     sampler = None
@@ -89,6 +112,17 @@ def make_loader(ids, shuffle=False, transform=None, mode='train', batch_size=32,
         filtered_ids = [id_ for id_ in ids if id_ not in suspicious]
     else:
         filtered_ids = ids
+
+    if mode == 'train' and ignore_empty_masks:
+        def load_mask(image_id):
+            path = os.path.join(PATH, 'train', 'masks', '%s.png' % image_id)
+            mask = cv2.imread(path, 0)
+            return (mask / 255.0).astype(np.uint8)
+
+        masks = [load_mask(x) for x in filtered_ids]
+        weights = [0 if np.sum(m) <= 5 else 1 for m in masks]
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(filtered_ids))
+        shuffle = False  # mutualy exclusive
 
     if mode == 'train' and weighted_sampling:
         def load_mask(image_id):
@@ -103,7 +137,7 @@ def make_loader(ids, shuffle=False, transform=None, mode='train', batch_size=32,
         shuffle = False  # mutualy exclusive
 
     return DataLoader(
-        dataset=TGSDataset(filtered_ids, transform=transform, mode=mode),
+        dataset=TGSDataset(filtered_ids, num_channels=num_channels, transform=transform, mode=mode),
         shuffle=shuffle,
         num_workers=workers,
         batch_size=batch_size,
@@ -113,9 +147,10 @@ def make_loader(ids, shuffle=False, transform=None, mode='train', batch_size=32,
 
 
 class TGSDataset(Dataset):
-    def __init__(self, ids: list, transform=None, mode='train'):
+    def __init__(self, ids: list, num_channels=3, transform=None, mode='train'):
         self.transform = transform
         self.mode = mode
+        self.num_channels = num_channels
         if mode != 'test':
             self.ids_ = pd.read_csv(os.path.join(PATH, 'train.csv')).id.values
             self.local_ids = ids
@@ -130,9 +165,12 @@ class TGSDataset(Dataset):
         return len(self.local_ids)
 
     def load_image(self, path):
-        img = cv2.imread(str(path))
-        img = img.astype(np.float32) / 255.0
-        img -= 0.5
+        img_mean = 0.5  # 0.47194558584317564
+        img_std = 1  # 0.1088611608890351
+        img = cv2.imread(str(path))[:, :, :self.num_channels]
+        img = img.astype(np.float32) / 255
+        img -= img_mean
+        img /= img_std
         return img
 
     def get_image_fname(self, image_id):
@@ -163,7 +201,7 @@ class TGSDataset(Dataset):
             data['mask'] = self.load_mask(image_id)
 
         augmented = self.transform(**data)
-        image_tensor = img_to_tensor(augmented['image']).reshape(3, SIZE, SIZE)
+        image_tensor = img_to_tensor(augmented['image']).reshape(self.num_channels, SIZE, SIZE)
 
         if self.mode != 'test':
             return image_tensor, torch.from_numpy(augmented['mask']).reshape(1, SIZE, SIZE).float()
@@ -171,13 +209,133 @@ class TGSDataset(Dataset):
             return image_tensor, self.get_image_fname(image_id)
 
 
+class TwoStreamBatchSampler(Sampler):
+    """Iterate two sets of indices
+    An 'epoch' is one iteration through the primary indices.
+    During the epoch, the secondary indices are iterated through
+    as many times as needed.
+    """
+    def __init__(self, primary_indices, secondary_indices, batch_size, secondary_batch_size):
+        self.primary_indices = primary_indices
+        self.secondary_indices = secondary_indices
+        self.secondary_batch_size = secondary_batch_size
+        self.primary_batch_size = batch_size - secondary_batch_size
+
+        assert len(self.primary_indices) >= self.primary_batch_size > 0
+        assert len(self.secondary_indices) >= self.secondary_batch_size > 0
+
+    def __iter__(self):
+        primary_iter = iterate_once(self.primary_indices)
+        secondary_iter = iterate_eternally(self.secondary_indices)
+        for (primary_batch, secondary_batch) in  zip(grouper(primary_iter, self.primary_batch_size), grouper(secondary_iter, self.secondary_batch_size)):
+            yield primary_batch + secondary_batch
+
+    def __len__(self):
+        return len(self.primary_indices) // self.primary_batch_size
+
+
+def iterate_once(iterable):
+    return np.random.permutation(iterable)
+
+
+def iterate_eternally(indices):
+    def infinite_shuffles():
+        while True:
+            yield np.random.permutation(indices)
+    return itertools.chain.from_iterable(infinite_shuffles())
+
+
+def grouper(iterable, n):
+    "Collect data into fixed-length chunks or blocks"
+    # grouper('ABCDEFG', 3) --> ABC DEF"
+    args = [iter(iterable)] * n
+    return zip(*args)
+
+
+class MeanTeacherTGSDataset(Dataset):
+    def __init__(self, labeled_ids: list, transform=None, mode='train'):
+        self.transform = transform
+        self.mode = mode
+
+        self.ids_ = pd.read_csv(os.path.join(PATH, 'train.csv')).id.values
+        self.local_ids = labeled_ids
+        self.real_idx = dict([(id_, pos) for pos, id_ in enumerate(self.ids_)])
+
+        self.unlabeled_ids_ = pd.read_csv(os.path.join(PATH, 'sample_submission.csv')).id.values
+
+    def __len__(self):
+        return len(self.local_ids) + len(self.unlabeled_ids_)
+
+    def load_image(self, path):
+        img = cv2.imread(str(path))
+        img = img.astype(np.float32) / 255.0
+        img -= 0.5
+        return img
+
+    def get_image_fname(self, image_id, labeled):
+        subdir = 'train' if labeled else 'test'
+        return os.path.join(PATH, subdir, 'images', '%s.png' % image_id)
+
+    def load_mask(self, image_id):
+        path = os.path.join(PATH, 'train', 'masks', '%s.png' % image_id)
+        mask = cv2.imread(path, 0)
+        return (mask / 255.0).astype(np.uint8)
+
+    def get_image_id(self, idx):
+        is_labeled = idx < len(self.local_ids)
+        if is_labeled:
+            return self.local_ids[idx]
+        else:
+            return self.unlabeled_ids_[idx - len(self.local_ids)]
+
+    def __getitem__(self, idx):
+        is_labeled = idx < len(self.local_ids)
+        image_id = self.get_image_id(idx)
+        image = self.load_image(self.get_image_fname(image_id, is_labeled))
+        data = dict()
+        data['image'] = image
+        if is_labeled:
+            data['mask'] = self.load_mask(image_id)
+        else:
+            data['mask'] = np.zeros((SIZE, SIZE), dtype=np.uint8)
+
+        augmented = self.transform(**data)
+        image_tensor = img_to_tensor(augmented['image']).reshape(3, SIZE, SIZE)
+
+        # TODO: add noise to teacher input
+        teacher_tensor = img_to_tensor(augmented['image']).reshape(3, SIZE, SIZE)
+        return (image_tensor, teacher_tensor, int(is_labeled)), torch.from_numpy(augmented['mask']).reshape(1, SIZE, SIZE).float()
+
+
 if __name__ == '__main__':
     print('empty.')
     a, b = get_split(0)
-    print(len(a), len(b))
-    #loader = make_loader(b, transform=val_transform())
-    #for inputs, target in loader:
-    #    inputs = inputs.data.cpu().numpy()
-    #    target = target.data.cpu().numpy()
-    #    print(inputs.shape, np.max(inputs), target.shape, np.max(target))
-            
+    print('train, val: ', len(a), len(b))
+
+    labeled_size = len(a)
+    unlabeled_size = 18000
+    batch_size = 24
+    sampler = TwoStreamBatchSampler(
+        list(range(labeled_size)),  # labeled ids
+        list(range(labeled_size, labeled_size+unlabeled_size)),  # unlabeled ids
+        batch_size,  # total batch size (labeled + unlabeled)
+        batch_size // 2  # labeled batch size
+    )
+
+    print('len sampler: ', len(sampler))
+
+    dl = DataLoader(
+        dataset=MeanTeacherTGSDataset(a, transform=val_transform(), mode='train'),
+        batch_sampler=sampler,
+        num_workers=1,
+        pin_memory=torch.cuda.is_available()
+    )
+
+    for batch_idx, (inputs, target) in enumerate(dl):
+        print(batch_idx)
+        #print(type(inputs))
+        #print(inputs[0].shape, inputs[1].shape, inputs[2].shape)
+        #print(target.shape)
+        break
+
+

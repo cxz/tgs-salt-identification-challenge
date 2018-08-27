@@ -66,9 +66,12 @@ def generate_submission(out_csv, preds):
     sub.to_csv(out_csv, index=False)
 
 
-def main(write_submission=True):
-
+def main(write_submission=True):    
     experiments = {
+        '../data/subm055': 4,
+        '../data/subm056': 1,
+        '../data/subm054': 1,
+        '../data/subm052': 1,
         '../data/subm049': 4,
         '../data/subm048': 2,
         '../data/subm045': 2,
@@ -111,7 +114,7 @@ def main(write_submission=True):
         thres_ioc = [iou_metric_batch(masks, np.int32(val_preds > t)) for t in thres]
         best_thres_tta = thres[np.argmax(thres_ioc)]
         print(f"fold {fold} -- iou: ", best_thres_tta, max(thres_ioc))  
-        
+
         fold_preds = []
         for exp, weight in experiments.items():
             fold_preds.append(weight * np.load(os.path.join(exp, f"test_preds_fold{fold}.npy")))
@@ -135,7 +138,7 @@ def main(write_submission=True):
                 final[idx] = 0
 
     if write_submission:
-        output_csv = '../submissions/subm_050.csv'
+        output_csv = '../submissions/subm_059.csv'
         print('writing to ', output_csv)
         
         generate_submission(output_csv, final)

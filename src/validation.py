@@ -10,6 +10,7 @@ def validation_binary(model: nn.Module, criterion, valid_loader):
         model.eval()
         losses = []
         iou = []
+        iou_fixed = []
 
         for inputs, targets in valid_loader:                        
             inputs = utils.cuda(inputs)
@@ -25,14 +26,16 @@ def validation_binary(model: nn.Module, criterion, valid_loader):
             # iou per image, not batch
             for t, o in zip(targets_npy, outputs_npy):
                 iou.append(metric.iou_metric(t, o > .5))
+                iou_fixed.append(metric.iou_metric(t, o > .5, fix_zero=True))
                 
             # in batch it's distorted
             #iou += [metric.iou_metric(targets_npy, (outputs_npy > .5))]
 
         valid_loss = np.mean(losses)  # type: float
-        valid_iou = np.mean(iou).astype(np.float64)        
+        valid_iou = np.mean(iou).astype(np.float64)
+        valid_iou_fixed = np.mean(iou_fixed).astype(np.float64)
 
-        print('valid loss: {:.4f}, iou: {:.4f}'.format(valid_loss, valid_iou))
+        print("valid loss: {:.4f}, iou: {:.4f}, iou':{:.4f}".format(valid_loss, valid_iou, valid_iou_fixed))
         
         metrics = {'val_loss': valid_loss, 'val_iou': valid_iou}
         return metrics

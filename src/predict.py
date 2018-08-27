@@ -59,15 +59,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
     arg('--path', type=str, default='experiment folder', help='')
-    #arg('--model_path', type=str, default='data/models/UNet', help='')
-    #arg('--model_type', type=str, default='unet-resnet101', help='', choices=['unet-resnet101'])
-    #arg('--output_path', type=str, help='', default='runs/inference')
     arg('--batch-size', type=int, default=32)
     arg('--fold', type=int, default=-1, choices=[0, 1, 2, 3, 4, -1], help='-1: all folds')    
     arg('--workers', type=int, default=8)
     args = parser.parse_args()
-    
-    
+
     with open(os.path.join(args.path, 'params.json'), 'r') as f:
         config = json.loads(f.read())
         

@@ -4,7 +4,8 @@ from torch.nn import functional as F
 import torchvision
 import other_models
 import unet_resnet50
-from zoo.albu_zoo.unet import DPNUnet
+from zoo.albu_zoo.unet import DPNUnet, PAResnet34
+from zoo.albu_zoo.wideresnet38 import WideResnet38
 
 archs = [
     'unet-resnet50',     
@@ -17,10 +18,13 @@ archs = [
     'unet-dpn107',
     'unet-incv3',
     'unet-serefinenet101',
-    'unet-serefinenet152'
+    'unet-serefinenet152',
+    'unet-wideresnet38',
+    'unet-paresnet34'
 ]
 
-def get_model(model_path, model_type):
+
+def get_model(model_path, model_type, num_channels=3):
     
     if model_type == 'unet-resnet101':
         model = UNetResNet(encoder_depth=101, num_classes=1, num_filters=16, dropout_2d=0.1, pretrained=True)
@@ -52,14 +56,20 @@ def get_model(model_path, model_type):
         raise # set encoder to resnet152
 
     elif model_type == 'unet-dpn131':        
-        model = DPNUnet(num_classes=1, num_channels=1, encoder_name='dpn131')
+        model = DPNUnet(num_classes=1, num_channels=num_channels, encoder_name='dpn131')
     
     elif model_type == 'unet-dpn107':
-        model = DPNUnet(num_classes=1, num_channels=1, encoder_name='dpn107')
+        model = DPNUnet(num_classes=1, num_channels=num_channels, encoder_name='dpn107')
 
     elif model_type == 'unet-incv3':
         from zoo.albu_zoo.unet import Incv3
         model = Incv3(1, 3)
+
+    elif model_type == 'unet-wideresnet38':
+        model = WideResnet38(num_classes=1, num_channels=1)
+
+    elif model_type == 'unet-paresnet34':
+        model = PAResnet34(num_classes=1, num_channels=num_channels, encoder_name='resnet34')
 
     else:
         raise NotImplementedError
@@ -220,7 +230,10 @@ if __name__ == '__main__':
     # model.forward(x1, x2)
     # print('.')
     
-    import pretrainedmodels
-    model_name = 'resnext101_64x4d'
-    model = pretrainedmodels.__dict__[model_name](num_classes=1000, pretrained='imagenet')
-    print(model)
+    #import pretrainedmodels
+    #model_name = 'resnext101_64x4d'
+    #odel = pretrainedmodels.__dict__[model_name](num_classes=1000, pretrained='imagenet')
+    #print(model)
+    #m = WideResnet38(num_classes=1, num_channels=1)
+    m = get_model(None, 'unet-dpn107', num_channels=1)
+    print(m)

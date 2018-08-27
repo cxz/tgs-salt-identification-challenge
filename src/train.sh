@@ -5,7 +5,7 @@
 #    python train.py --name exp20 --model unet-resnet101 --lr 0.0001 --n-epochs 250 --fold $i --loss focal --focal-gamma 0.5
 #done
 
-N_EPOCHS=500
+N_EPOCHS=200
 LR=0.0001
 
 #for i in 0 1 2 3 4
@@ -106,3 +106,28 @@ LR=0.0001
 #    python train.py --name exp49-dpn107 --model unet-dpn107 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss lovasz --batch-size 24 --resume
 #    sleep 10
 #done
+
+
+#too slow, didn't converge
+#for i in 0 1 2 3 4
+#do
+#    python train.py --name exp50-wideresnet38 --model unet-wideresnet38 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_dice --batch-size 24 --weighted-sampler
+#    sleep 10
+#done
+
+
+#for i in 1 2 3 4
+#do
+#    #--weighted-sampler
+#    python train.py --name exp51-dpn107 --model unet-dpn107 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss lovasz --batch-size 16 --resume
+#    sleep 10
+#done
+
+
+for i in 0 1 2 3 4
+do
+    #--weighted-sampler
+    #--num-channels 1
+    python train.py --name exp58 --model unet-dpn131 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss bce_dice --batch-size 8
+    sleep 10
+done
