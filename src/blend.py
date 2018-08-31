@@ -66,9 +66,19 @@ def generate_submission(out_csv, preds):
     sub.to_csv(out_csv, index=False)
 
 
-def main(write_submission=True):    
+def main(write_submission=True):
     experiments = {
-        '../data/subm055': 12,
+        '../data/subm066': 2,
+        '../data/subm055': 2,
+        '../data/subm049': 1,
+        '../data/subm048': 1,
+        '../data/subm045': 1,
+        '../data/subm036': 1,
+    }
+    
+    experiments_old = {
+        '../data/subm066': 6,
+        '../data/subm055': 6,
         '../data/subm056': 1,
         '../data/subm054': 1,
         '../data/subm052': 1,
@@ -124,6 +134,8 @@ def main(write_submission=True):
         fold_preds_thresholded = (fold_preds > best_thres_tta).astype(np.uint8)
         preds += fold_preds_thresholded
 
+    np.save('raw_preds.npy', preds/5.0)
+
     # majority voting
     final = np.round(preds/5.0).astype(np.uint8)
 
@@ -138,7 +150,7 @@ def main(write_submission=True):
                 final[idx] = 0
 
     if write_submission:
-        output_csv = '../submissions/subm_062.csv'
+        output_csv = '../submissions/subm_067.csv'
         print('writing to ', output_csv)
         
         generate_submission(output_csv, final)

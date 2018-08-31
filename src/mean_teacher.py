@@ -35,9 +35,9 @@ CONSISTENCY = 100
 CONSISTENCY_RAMPUP = 5
 LR_RAMPDOWN_EPOCHS = 100
 LR_RAMPUP = 2
-EPOCHS = 100
+EPOCHS = 50
 
-BATCH_SIZE=16
+BATCH_SIZE=8
 LABELED_BATCH_SIZE=4
 
 def sigmoid_rampup(current, rampup_length):
@@ -146,6 +146,7 @@ def get_current_consistency_weight(epoch):
     # Consistency ramp-up from https://arxiv.org/abs/1610.02242
     return CONSISTENCY * sigmoid_rampup(epoch, CONSISTENCY_RAMPUP)
 
+
 def save(model, optimizer, model_path, epoch, step, valid_best):    
     # epoch_path = "{}_epoch{}.pth".format(str(model_path), epoch)
     torch.save({
@@ -230,20 +231,20 @@ def train(train_loader, model, ema_model, optimizer, epoch):
 
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
-def main(fold=4, batch_size=BATCH_SIZE, lr=1e-5, workers=4):  
+def main(fold=0, batch_size=BATCH_SIZE, lr=1e-5, workers=4):
     global global_step
     train_loader, valid_loader = create_data_loaders(fold, batch_size, workers)
 
-    model_path = f'../data/runs/exp55-dpn107-mean-teacher/model_{fold}.pth'
+    model_path = f'../data/runs/exp66-ud/model_{fold}.pth'
     
     # create model and ema_model
     model, ema_model = create_model('unet-dpn107', model_path)
 
     criterion = LossLovasz()
-    #optimizer = Adam(model.parameters(), lr=lr)
-    #scheduler = ReduceLROnPlateau(optimizer, verbose=True, patience=10, min_lr=1e-7, factor=0.8)
-    optimizer = SGD(model.parameters(), lr=lr)
-    scheduler = CosineAnnealingLR(optimizer, T_max=50)
+    optimizer = Adam(model.parameters(), lr=lr)
+    scheduler = ReduceLROnPlateau(optimizer, verbose=True, patience=5, min_lr=1e-7, factor=0.8)
+    # optimizer = SGD(model.parameters(), lr=lr)
+    # scheduler = CosineAnnealingLR(optimizer, T_max=50)
 
     cudnn.benchmark = True
 
@@ -292,14 +293,14 @@ def predict(path, kind='student', batch_size=BATCH_SIZE, fold=-1, workers=8):
         print('predicting val set')
         val_output = os.path.join(path, f"val_preds_fold{fold}.npy")
         _, val_ids = dataset.get_split(fold)
-        predict_tta(model, val_ids, val_output, kind='val')
+        predict_tta(model, val_ids, val_output, kind='val', upside_down=True)
 
         print('predicting test set')
         test_output = os.path.join(path, f"test_preds_fold{fold}.npy")
-        predict_tta(model, test_ids, test_output)
+        predict_tta(model, test_ids, test_output, kind='test', upside_down=True)
 
 
 if __name__ == '__main__':
-    main()
+    # main(fold=0)
     # predict('../data/runs/tmp', kind='student')
-    # predict('../data/runs/tmp', kind='teacher')
+    predict('../data/runs/exp66-ud', kind='teacher')

@@ -49,16 +49,15 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
         step = state['step']
         valid_best = state['valid_best']
         model.load_state_dict(state['model'])
-        # optimizer.load_state_dict(state['optimizer'])  # causing oom if history too large
+        optimizer.load_state_dict(state['optimizer'])  # causing oom if history too large
         # set_learning_rate(optimizer, 1e-5)
         print('Restored model, fold{}, epoch {}, step {:,}, valid_best {}'.format(fold, epoch, step, valid_best))
         
         #
-        optimizer = Adam(model.parameters(), lr=1e-5)
-        scheduler = ReduceLROnPlateau(optimizer, verbose=True, patience=10, min_lr=1e-7, factor=0.8)
+        # optimizer = Adam(model.parameters(), lr=1e-6)
+        # scheduler = ReduceLROnPlateau(optimizer, verbose=True, patience=5, min_lr=1e-7, factor=0.8)
         #del state
-        
-                
+                        
         
     else:
         epoch = 1

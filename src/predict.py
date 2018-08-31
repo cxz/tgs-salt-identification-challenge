@@ -15,7 +15,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch.nn import functional as F
 from albumentations import Compose, Normalize
-from albumentations import HorizontalFlip, PadIfNeeded
+from albumentations import HorizontalFlip, PadIfNeeded, VerticalFlip
 
 from metric import iou_metric
 import dataset
@@ -42,16 +42,18 @@ def predict(model, ids, transform, kind):
     return preds
 
 
-def predict_tta(model, ids, output, kind='test'):
+def predict_tta(model, ids, output, kind='test', upside_down=False):
     size = dataset.SIZE
-    base_transform = Compose([PadIfNeeded(min_height=size, min_width=size)])
+    base_transform = Compose([VerticalFlip(p=int(upside_down)), PadIfNeeded(min_height=size, min_width=size)])
     preds1 = predict(model, ids, transform=base_transform, kind=kind)
     
-    flip_lr = Compose([HorizontalFlip(p=1), PadIfNeeded(min_height=size, min_width=size)])
+    flip_lr = Compose([VerticalFlip(p=int(upside_down)), HorizontalFlip(p=1), PadIfNeeded(min_height=size, min_width=size)])
     preds2 = predict(model, ids, transform=flip_lr, kind=kind)
     preds2 = preds2[:, :, ::-1, :]
     
     preds = np.mean([preds1, preds2], axis=0)
+    if upside_down:
+        preds = preds[:, ::-1, :, :]
     np.save(output, preds)
 
     

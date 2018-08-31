@@ -13,6 +13,7 @@ import torch.backends.cudnn as cudnn
 import torch.backends.cudnn
 
 from loss import LossBinary, FocalLoss, LossLovasz, BCEDiceJaccardLoss
+
 import dataset
 import models
 import utils
@@ -33,11 +34,12 @@ def main():
     arg('--workers', type=int, default=4)
     arg('--seed', type=int, default=0)
     arg('--model', type=str, default=models.archs[0], choices=models.archs)
-    arg('--loss', type=str, default='focal', choices=['focal', 'lovasz', 'bjd', 'bce_jaccard', 'bce_dice'])
+    arg('--loss', type=str, default='focal', choices=['focal', 'lovasz', 'bjd', 'bce_jaccard', 'bce_dice', 'cos_dice'])
     arg('--focal-gamma', type=float, default=.5)
     arg('--num-channels', type=int, default=3)
     arg('--weighted-sampler', action="store_true")
     arg('--ignore-empty-masks', action='store_true')
+    arg('--remove-suspicious', action='store_true')
     arg('--resume', action="store_true")
     args = parser.parse_args()
 
@@ -74,6 +76,7 @@ def main():
         shuffle=True,
         weighted_sampling=args.weighted_sampler,
         ignore_empty_masks=args.ignore_empty_masks,
+        remove_suspicious=args.remove_suspicious,
         batch_size=args.batch_size,
         workers=args.workers)
 
@@ -102,8 +105,11 @@ def main():
     elif args.loss == 'bce_dice':
         import loss2
         bce_weight = 1
-        dice_weight = 3
+        dice_weight = 2
         loss = loss2.make_loss(bce_weight, dice_weight)
+    elif args.loss == 'cos_dice':
+        import loss2
+        loss = loss2.make_cos_dice_loss()        
         
     else:
         raise NotImplementedError

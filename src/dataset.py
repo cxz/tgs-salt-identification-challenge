@@ -13,6 +13,7 @@ from torch.utils.data.sampler import Sampler
 
 from albumentations.torch.functional import img_to_tensor
 from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, ElasticTransform, Compose, PadIfNeeded, RandomCrop, Cutout, IAAAdditiveGaussianNoise
+from albumentations import VerticalFlip
 
 SIZE = 128
 PATH = '../input'
@@ -38,13 +39,17 @@ def generate_folds_by_depth():
 #    df['fold'] = (list(range(n_fold))*df.shape[0])[:df.shape[0]]
 #    print(df.head())
 #    df[['id', 'fold']].to_csv(os.path.join(PATH, 'folds_density.csv'), index=False)    
-    
+
+
 def get_split(fold):
     train_df = pd.read_csv(os.path.join(PATH, 'train.csv'))
     train_ids = train_df.id.values
 
     folds = pd.read_csv(os.path.join(PATH, 'folds.csv'))
     fold_dict = folds.set_index('id').to_dict()['fold']
+
+    # depth = pd.read_csv(os.path.join(PATH, 'depths.csv'))
+    # depth_dict = depth.set_index('id').to_dict()['z']
 
     fold_ids = [train_id for train_id in train_ids if fold_dict[train_id] != fold]
     val_ids = [train_id for train_id in train_ids if fold_dict[train_id] == fold]
@@ -56,9 +61,10 @@ def get_test_ids():
     return sample_df.id.values
 
 
-def train_transform():
+def train_transform(upside_down=False):
     return Compose([
         PadIfNeeded(min_height=SIZE, min_width=SIZE),
+        VerticalFlip(p=int(upside_down)),
         HorizontalFlip(
             p=0.5),
         #Cutout(
@@ -78,7 +84,7 @@ def train_transform():
             sigma=30,          # TODO
             alpha_affine=30),  # TODO
         ShiftScaleRotate(
-            p=0.5,
+            p=0.50,
             rotate_limit=.15,   # TODO
             shift_limit=.25,    # TODO
             scale_limit=.25,    # TODO
@@ -87,8 +93,9 @@ def train_transform():
     ], p=1)
 
 
-def val_transform():
+def val_transform(upside_down=False):
     return Compose([
+        VerticalFlip(p=int(upside_down)),
         PadIfNeeded(min_height=SIZE, min_width=SIZE),
     ], p=1)
 
