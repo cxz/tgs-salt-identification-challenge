@@ -71,6 +71,7 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
 
     steps_per_epoch = len(train_loader) * batch_size
     smooth_mean = 10
+    iter_size = 1  # accumulate gradient
     
     for epoch in range(epoch, n_epochs + 1):
         model.train()
@@ -81,6 +82,9 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
         tl = train_loader
         try:
             mean_loss = 0
+            optimizer.zero_grad()
+            batch_loss_value = 0
+
             for i, (inputs, targets) in enumerate(tl):
                 inputs = cuda(inputs)
 
@@ -89,16 +93,21 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
                     
                 outputs = model(inputs)
                 loss = criterion(outputs, targets)
-
-                optimizer.zero_grad()
                 loss.backward()
-                optimizer.step()
+                batch_loss_value += loss.detach().cpu().numpy()
+
+                if i % iter_size == 0:
+                    optimizer.step()
+                    batch_loss_value /= iter_size
+                    losses.append(batch_loss_value.item())
+                    mean_loss = np.mean(losses[-smooth_mean:])
+
+                    batch_loss_value = 0
+                    optimizer.zero_grad()
                 
                 step += 1
 
                 tq.update(inputs.size(0))
-                losses.append(loss.item())
-                mean_loss = np.mean(losses[-smooth_mean:])
                 tq.set_postfix(loss='{:.5f}'.format(mean_loss))
 
             tq.close()
