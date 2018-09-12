@@ -77,7 +77,7 @@ def get_model(model_path, model_type, num_channels=3):
     if model_path is not None:
         state = torch.load(str(model_path))
         state = {key.replace('module.', ''): value for key, value in state['model'].items()}
-        model.load_state_dict(state)
+        model.load_state_dict(state, strict=True)
 
     if torch.cuda.is_available():
         return model.cuda()
