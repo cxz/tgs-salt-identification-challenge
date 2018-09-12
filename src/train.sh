@@ -139,9 +139,9 @@ LR=0.0001
 #    sleep 10
 #done
 
-for i in 0 1 2 3 4
-do
-    python train.py --name exp66-ud --model unet-dpn107 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss lovasz --batch-size 16 --resume
-    sleep 10
-done
+#for i in 0 1 2 3 4
+#do
+#    python train.py --name exp68-dpn107-small --model unet-dpn107 --lr $LR --n-epochs $N_EPOCHS --fold $i --loss lovasz  --batch-size 4 --resume
+#    sleep 10
+#done
 

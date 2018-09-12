@@ -115,7 +115,7 @@ def main():
         raise NotImplementedError
 
     validation = validation_binary
-    scheduler = ReduceLROnPlateau(optimizer, verbose=True, min_lr=1e-7, factor=0.8)
+    scheduler = ReduceLROnPlateau(optimizer, verbose=True, min_lr=1e-7, factor=0.5)
     snapshot = utils.fold_snapshot(output_dir, args.fold) if args.resume else None
 
     utils.train(
