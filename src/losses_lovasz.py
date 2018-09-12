@@ -6,6 +6,7 @@ import numpy as np
 
 VOID_LABEL = -1
 
+
 def crossentropyloss(logits, label):
     mask = (label.view(-1) != VOID_LABEL)
     nonvoid = mask.long().sum()
@@ -74,14 +75,14 @@ def hingeloss(logits, label):
     hinge = 1./num_preds * F.relu(1. - logits * Variable(target)).sum()
     return hinge
 
-def gamma_fast(gt, permutation):
+def gamma_fast(gt, permutation, eps=1e-9):
     p = len(permutation)
     gt = gt.gather(0, permutation)
     gts = gt.sum()
 
     intersection = gts - gt.float().cumsum(0)
     union = gts + (1 - gt).float().cumsum(0)
-    jaccard = 1. - intersection / union
+    jaccard = 1. - (intersection+eps) / (union+eps)
 
     jaccard[1:p] = jaccard[1:p] - jaccard[0:-1]
     return jaccard
@@ -223,7 +224,8 @@ def lovasz_binary(margins, label, prox=False, max_steps=20, debug={}):
     _, perm = torch.sort(margins.data, dim=0, descending=True)
     margins_sorted = margins[perm]
     grad = gamma_fast(label, perm)
-    loss = torch.dot(F.relu(margins_sorted), Variable(grad))
+    # loss = torch.dot(F.relu(margins_sorted), Variable(grad))
+    loss = torch.dot(1 + F.elu(margins_sorted), Variable(grad))
     if prox is not False:
         xp, gam = find_proximal(margins_sorted.data, grad, prox, max_steps=max_steps, eps=1e-6, debug=debug)
         hook = margins_sorted.register_hook(lambda grad: Variable(margins_sorted.data - xp))
@@ -236,9 +238,9 @@ def lovasz_single(logit, label, prox=False, max_steps=20, debug={}):
     # single images
     mask = (label.view(-1) != 255)
     num_preds = mask.long().sum()
-    if num_preds == 0:
-        # only void pixels, the gradients should be 0
-        return logit.sum() * 0.
+    #if num_preds == 0:
+    #    # only void pixels, the gradients should be 0
+    #    return logit.sum() * 0.
     target = label.contiguous().view(-1)[mask]
     signs = 2. * target.float() - 1.
     logit = logit.contiguous().view(-1)[mask]
