@@ -23,11 +23,12 @@ import models
 import utils
 
 
-def predict(model, ids, transform, kind):
+def predict(model, ids, transform, kind, batch_size=32):
     loader = dataset.make_loader(
         ids,
         shuffle=False,
         mode=kind,
+        batch_size=batch_size,
         transform=transform)
     preds = np.zeros((len(ids), 101, 101, 1), dtype=np.float32)
     pred_idx = 0
@@ -42,13 +43,13 @@ def predict(model, ids, transform, kind):
     return preds
 
 
-def predict_tta(model, ids, output, kind='test', upside_down=False):
+def predict_tta(model, ids, output, kind='test', upside_down=False, batch_size=32):
     size = dataset.SIZE
-    base_transform = Compose([VerticalFlip(p=int(upside_down)), PadIfNeeded(min_height=size, min_width=size)])
-    preds1 = predict(model, ids, transform=base_transform, kind=kind)
+    base_transform = Compose([VerticalFlip(p=int(upside_down)), PadIfNeeded(min_height=size, min_width=size), Normalize()])
+    preds1 = predict(model, ids, transform=base_transform, kind=kind, batch_size=batch_size)
     
-    flip_lr = Compose([VerticalFlip(p=int(upside_down)), HorizontalFlip(p=1), PadIfNeeded(min_height=size, min_width=size)])
-    preds2 = predict(model, ids, transform=flip_lr, kind=kind)
+    flip_lr = Compose([VerticalFlip(p=int(upside_down)), HorizontalFlip(p=1), PadIfNeeded(min_height=size, min_width=size), Normalize()])
+    preds2 = predict(model, ids, transform=flip_lr, kind=kind, batch_size=batch_size)
     preds2 = preds2[:, :, ::-1, :]
     
     preds = np.mean([preds1, preds2], axis=0)
@@ -83,8 +84,8 @@ if __name__ == '__main__':
         print('predicting val set')
         val_output = os.path.join(args.path, f"val_preds_fold{fold}.npy")
         _, val_ids = dataset.get_split(fold)
-        predict_tta(model, val_ids, val_output, kind='val')
+        predict_tta(model, val_ids, val_output, kind='val', batch_size=args.batch_size)
         
         print('predicting test set')
         test_output = os.path.join(args.path, f"test_preds_fold{fold}.npy")        
-        predict_tta(model, test_ids, test_output)
+        predict_tta(model, test_ids, test_output, batch_size=args.batch_size)

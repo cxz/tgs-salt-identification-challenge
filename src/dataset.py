@@ -14,6 +14,7 @@ from torch.utils.data.sampler import Sampler
 from albumentations.torch.functional import img_to_tensor
 from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, ElasticTransform, Compose, PadIfNeeded, RandomCrop, Cutout, IAAAdditiveGaussianNoise
 from albumentations import VerticalFlip
+from albumentations import Normalize
 
 SIZE = 128
 PATH = '../input'
@@ -84,19 +85,21 @@ def train_transform(upside_down=False):
             sigma=30,          # TODO
             alpha_affine=30),  # TODO
         ShiftScaleRotate(
-            p=0.50,
+            p=0.25,
             rotate_limit=.15,   # TODO
             shift_limit=.25,    # TODO
             scale_limit=.25,    # TODO
             interpolation=cv2.INTER_CUBIC,
             border_mode=cv2.BORDER_REFLECT_101),
+        Normalize(),
     ], p=1)
 
 
-def val_transform(upside_down=False):
+def val_transform(upside_down=False):    
     return Compose([
         VerticalFlip(p=int(upside_down)),
         PadIfNeeded(min_height=SIZE, min_width=SIZE),
+        Normalize()
     ], p=1)
 
 
@@ -108,6 +111,7 @@ def make_loader(
         batch_size=32, workers=4,
         ignore_empty_masks=False,
         weighted_sampling=False,
+        weighted_sampling_small_masks=False,
         remove_suspicious=False):
 
     assert transform is not None
@@ -131,7 +135,7 @@ def make_loader(
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(filtered_ids))
         shuffle = False  # mutualy exclusive
 
-    if mode == 'train' and weighted_sampling:
+    if mode == 'train' and weighted_sampling_small_masks:
         def load_mask(image_id):
             path = os.path.join(PATH, 'train', 'masks', '%s.png' % image_id)
             mask = cv2.imread(path, 0)
@@ -142,6 +146,18 @@ def make_loader(
         weights = [1.25 if 50 <= np.sum(m) <= 500 else 1 for m in masks]        
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(filtered_ids))
         shuffle = False  # mutualy exclusive
+        
+    if mode == 'train' and weighted_sampling:
+        def load_mask(image_id):
+            path = os.path.join(PATH, 'train', 'masks', '%s.png' % image_id)
+            mask = cv2.imread(path, 0)
+            return (mask / 255.0).astype(np.uint8)
+
+        masks = [load_mask(x) for x in filtered_ids]
+
+        weights = [1 if 0 == np.sum(m) else 1.6315 for m in masks] # 38% of empty masks
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(filtered_ids))
+        shuffle = False  # mutualy exclusive        
 
     return DataLoader(
         dataset=TGSDataset(filtered_ids, num_channels=num_channels, transform=transform, mode=mode),
@@ -175,9 +191,9 @@ class TGSDataset(Dataset):
         img_mean = 0.5  # 0.47194558584317564
         img_std = 1  # 0.1088611608890351
         img = cv2.imread(str(path))[:, :, :self.num_channels]
-        img = img.astype(np.float32) / 255
-        img -= img_mean
-        img /= img_std
+        img = img.astype(np.float32) #/ 255
+        #img -= mean
+        #img /= std
         return img
 
     def get_image_fname(self, image_id):
@@ -275,8 +291,8 @@ class MeanTeacherTGSDataset(Dataset):
 
     def load_image(self, path):
         img = cv2.imread(str(path))
-        img = img.astype(np.float32) / 255.0
-        img -= 0.5
+        img = img.astype(np.float32) # / 255.0
+        #img -= 0.5
         return img
 
     def get_image_fname(self, image_id, labeled):
