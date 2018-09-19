@@ -106,7 +106,8 @@ def main(write_submission=False):
 
     preds = np.zeros((18000, 101, 101, 1), dtype=np.float32)
     
-    for fold in range(5):
+    folds = list(range(5))
+    for fold in folds:
         print('processing fold ', fold)
                         
         # merge fold predictions for val set
@@ -135,10 +136,10 @@ def main(write_submission=False):
         fold_preds_thresholded = (fold_preds > best_thres_tta).astype(np.uint8)
         preds += fold_preds_thresholded
 
-    np.save('raw_preds.npy', preds/5.0)
+    #np.save('raw_preds.npy', preds/5.0)
 
     # majority voting
-    final = np.round(preds/5.0).astype(np.uint8)
+    final = np.round(1.*preds/len(folds)).astype(np.uint8)
 
     # post processing
     # gave .001 improvement from .843 to .844
@@ -151,7 +152,7 @@ def main(write_submission=False):
                 final[idx] = 0
 
     if write_submission:
-        output_csv = '../submissions/subm_068.csv'
+        output_csv = '../submissions/subm_074.csv'
         print('writing to ', output_csv)
         
         generate_submission(output_csv, final)
