@@ -37,8 +37,8 @@ LR_RAMPDOWN_EPOCHS = 100
 LR_RAMPUP = 2
 EPOCHS = 50
 
-BATCH_SIZE=8
-LABELED_BATCH_SIZE=4
+BATCH_SIZE=32
+LABELED_BATCH_SIZE=16
 
 def sigmoid_rampup(current, rampup_length):
     """Exponential rampup from https://arxiv.org/abs/1610.02242"""
@@ -235,15 +235,17 @@ def main(fold=0, batch_size=BATCH_SIZE, lr=1e-5, workers=4):
     global global_step
     train_loader, valid_loader = create_data_loaders(fold, batch_size, workers)
 
-    model_path = f'../data/runs/exp66-ud/model_{fold}.pth'
+    # model_path = f'../data/runs/exp66-ud/model_{fold}.pth'
+    model_path = f'../data/runs/tmp2-unetheng/model_{fold}.pth'
     
     # create model and ema_model
-    model, ema_model = create_model('unet-dpn107', model_path)
+    # model, ema_model = create_model('unet-dpn107', model_path)
+    model, ema_model = create_model('heng34', model_path)    
 
     criterion = LossLovasz()
     optimizer = Adam(model.parameters(), lr=lr)
-    scheduler = ReduceLROnPlateau(optimizer, verbose=True, patience=5, min_lr=1e-7, factor=0.8)
     # optimizer = SGD(model.parameters(), lr=lr)
+    scheduler = ReduceLROnPlateau(optimizer, verbose=True, patience=10, min_lr=1e-7, factor=0.5)
     # scheduler = CosineAnnealingLR(optimizer, T_max=50)
 
     cudnn.benchmark = True
@@ -301,6 +303,6 @@ def predict(path, kind='student', batch_size=BATCH_SIZE, fold=-1, workers=8):
 
 
 if __name__ == '__main__':
-    # main(fold=0)
+    main(fold=4, lr=1e-5)
     # predict('../data/runs/tmp', kind='student')
-    predict('../data/runs/exp66-ud', kind='teacher')
+    #predict('../data/runs/exp66-ud', kind='teacher')
