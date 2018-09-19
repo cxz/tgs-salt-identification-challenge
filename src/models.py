@@ -4,8 +4,10 @@ from torch.nn import functional as F
 import torchvision
 import other_models
 import unet_resnet50
+import unet_resnet34
 from zoo.albu_zoo.unet import DPNUnet, PAResnet34
 from zoo.albu_zoo.wideresnet38 import WideResnet38
+from zoo.unet_dpn import UnetDPN
 
 archs = [
     'unet-resnet50',     
@@ -20,7 +22,9 @@ archs = [
     'unet-serefinenet101',
     'unet-serefinenet152',
     'unet-wideresnet38',
-    'unet-paresnet34'
+    'unet-paresnet34',
+    'unet-dpnx',
+    'heng34',
 ]
 
 
@@ -40,6 +44,9 @@ def get_model(model_path, model_type, num_channels=3):
         
     elif model_type == 'unet-resnet50':
         model = unet_resnet50.UNet(num_classes=1, num_filters=32, pretrained=True)
+        
+    elif model_type == 'heng34':        
+        model = unet_resnet34.UNetResNet34Heng(dropout2d=0.5)
         
     elif model_type == 'unet-dpn92':
         model = DPNUnet(num_classes=1, num_channels=1, encoder_name='dpn92')
@@ -70,6 +77,9 @@ def get_model(model_path, model_type, num_channels=3):
 
     elif model_type == 'unet-paresnet34':
         model = PAResnet34(num_classes=1, num_channels=num_channels, encoder_name='resnet34')
+
+    elif model_type == 'unet-dpnx':
+        model = UnetDPN()
 
     else:
         raise NotImplementedError
@@ -235,5 +245,15 @@ if __name__ == '__main__':
     #odel = pretrainedmodels.__dict__[model_name](num_classes=1000, pretrained='imagenet')
     #print(model)
     #m = WideResnet38(num_classes=1, num_channels=1)
-    m = get_model(None, 'unet-dpn107', num_channels=1)
-    print(m)
+    #m = get_model(None, 'unet-dpn107', num_channels=1)
+    #print(m)
+    
+    #m = get_model(None, 'heng34')
+    #x1 = torch.from_numpy(np.zeros((4, 3, 128, 128), dtype=np.float32))
+    #m.forward(x1.cuda())
+
+    m  = get_model(None, 'unet-dpnx')
+    x1 = torch.from_numpy(np.zeros((4, 3, 128, 128), dtype=np.float32))
+    m.forward(x1.cuda())
+
+    
