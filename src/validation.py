@@ -37,7 +37,7 @@ def validation_binary(model: nn.Module, criterion, valid_loader):
 
         print("valid loss: {:.4f}, iou: {:.4f}, iou':{:.4f}".format(valid_loss, valid_iou, valid_iou_fixed))
         
-        metrics = {'val_loss': valid_loss, 'val_iou': valid_iou}
+        metrics = {'val_loss': valid_loss, 'val_iou': valid_iou_fixed}
         return metrics
 
 

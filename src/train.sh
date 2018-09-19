@@ -145,3 +145,12 @@ LR=0.0001
 #    sleep 10
 #done
 
+for i in 4
+do
+    #python train.py --name tmp2-unetheng --model heng34 --lr $LR --n-epochs 1000 --fold $i --loss lovasz  --batch-size 32 --iter-size 1 --weighted-sampler
+    python train.py --name tmp2-unetheng --model heng34 --lr 0.01 --n-epochs 200 --fold $i --loss lovasz  --batch-size 64 --iter-size 1 --weighted-sampler --resume
+    sleep 10
+done
+
+
+

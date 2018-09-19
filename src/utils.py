@@ -42,21 +42,21 @@ def save(model, optimizer, model_path, epoch, step, valid_best):
     }, str(model_path))
 
 
-def train(experiment, output_dir, args, model, criterion, scheduler, train_loader, valid_loader, validation, optimizer, n_epochs=None, fold=None, batch_size=None, snapshot=None):
+def train(experiment, output_dir, args, model, criterion, scheduler, train_loader, valid_loader, validation, optimizer, n_epochs=None, fold=None, batch_size=None, snapshot=None, iter_size=1):
     if snapshot:
         state = torch.load(snapshot)
         epoch = state['epoch']
         step = state['step']
         valid_best = state['valid_best']
         model.load_state_dict(state['model'])
-        optimizer.load_state_dict(state['optimizer'])  # causing oom if history too large
+        # optimizer.load_state_dict(state['optimizer'])  # causing oom if history too large
         # set_learning_rate(optimizer, 1e-5)
         print('Restored model, fold{}, epoch {}, step {:,}, valid_best {}'.format(fold, epoch, step, valid_best))
         
         #
-        # optimizer = Adam(model.parameters(), lr=1e-6)
-        # scheduler = ReduceLROnPlateau(optimizer, verbose=True, patience=5, min_lr=1e-7, factor=0.8)
-        #del state
+        # optimizer = Adam(model.parameters(), lr=1e-5)
+        # scheduler = ReduceLROnPlateau(optimizer, verbose=True, patience=10, min_lr=1e-7, factor=0.5)
+        del state
                         
         
     else:
@@ -71,8 +71,7 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
 
     steps_per_epoch = len(train_loader) * batch_size
     smooth_mean = 10
-    iter_size = 1  # accumulate gradient
-    
+
     for epoch in range(epoch, n_epochs + 1):
         model.train()
         tq = tqdm.tqdm(total=(steps_per_epoch))
@@ -96,6 +95,7 @@ def train(experiment, output_dir, args, model, criterion, scheduler, train_loade
                 loss.backward()
                 batch_loss_value += loss.detach().cpu().numpy()
 
+                # acumulate gradient for n iters
                 if i % iter_size == 0:
                     optimizer.step()
                     batch_loss_value /= iter_size

@@ -8,6 +8,7 @@ from validation import validation_binary
 import torch
 from torch import nn
 from torch.optim import Adam
+from torch.optim import SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.backends.cudnn as cudnn
 import torch.backends.cudnn
@@ -29,6 +30,7 @@ def main():
     arg('--fold', type=int, help='fold', default=0)
     arg('--output-dir', default='../data/runs', help='checkpoint root')
     arg('--batch-size', type=int, default=32)
+    arg('--iter-size', type=int, default=1)
     arg('--n-epochs', type=int, default=100)
     arg('--lr', type=float, default=0.0001)
     arg('--workers', type=int, default=4)
@@ -132,7 +134,8 @@ def main():
         fold=args.fold,
         batch_size=args.batch_size,
         n_epochs=args.n_epochs,        
-        snapshot=snapshot
+        snapshot=snapshot,
+        iter_size=args.iter_size
     )
 
 
