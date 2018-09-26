@@ -4,6 +4,7 @@ from torch.nn import functional as F
 import utils
 import numpy as np
 import losses_lovasz
+import losses_lovasz2
 
 
 # def jaccard_distance(outputs, targets):
@@ -112,6 +113,10 @@ class LossBinaryMixedDiceBCE:
 class LossLovasz:
     def __call__(self, outputs, targets):
         return losses_lovasz.lovaszloss(outputs, targets)
+
+class LossHinge:
+    def __call__(self, outputs, targets):
+        return losses_lovasz2.lovasz_hinge(outputs, targets)
 
 class DiceLoss(nn.Module):
     def __init__(self, weight=None, size_average=True):

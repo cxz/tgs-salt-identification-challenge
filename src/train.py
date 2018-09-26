@@ -13,7 +13,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.backends.cudnn as cudnn
 import torch.backends.cudnn
 
-from loss import LossBinary, FocalLoss, LossLovasz, BCEDiceJaccardLoss
+from loss import LossBinary, FocalLoss, LossLovasz, BCEDiceJaccardLoss, LossHinge
 
 import dataset
 import models
@@ -36,7 +36,7 @@ def main():
     arg('--workers', type=int, default=4)
     arg('--seed', type=int, default=0)
     arg('--model', type=str, default=models.archs[0], choices=models.archs)
-    arg('--loss', type=str, default='focal', choices=['focal', 'lovasz', 'bjd', 'bce_jaccard', 'bce_dice', 'cos_dice'])
+    arg('--loss', type=str, default='focal', choices=['focal', 'lovasz', 'bjd', 'bce_jaccard', 'bce_dice', 'cos_dice', 'hinge'])
     arg('--focal-gamma', type=float, default=.5)
     arg('--num-channels', type=int, default=3)
     arg('--weighted-sampler', action="store_true")
@@ -58,7 +58,7 @@ def main():
     output_dir.joinpath('params.json').write_text(json.dumps(vars(args), indent=True, sort_keys=True))
     
     # in case --resume is provided it will be loaded later
-    model = models.get_model(None, args.model)
+    model = models.get_model('../data/runs/exp77/model_4.pth', args.model)
 
     if torch.cuda.is_available():
         if args.device_ids:
@@ -111,7 +111,9 @@ def main():
         loss = loss2.make_loss(bce_weight, dice_weight)
     elif args.loss == 'cos_dice':
         import loss2
-        loss = loss2.make_cos_dice_loss()        
+        loss = loss2.make_cos_dice_loss()
+    elif args.loss == 'hinge':
+        loss = LossHinge()
         
     else:
         raise NotImplementedError

@@ -145,12 +145,25 @@ LR=0.0001
 #    sleep 10
 #done
 
+#for i in 4
+#do
+#    #python train.py --name tmp2-unetheng --model heng34 --lr $LR --n-epochs 1000 --fold $i --loss lovasz  --batch-size 32 --iter-size 1 --weighted-sampler
+#    python train.py --name tmp2-unetheng --model heng34 --lr 0.01 --n-epochs 200 --fold $i --loss lovasz  --batch-size 64 --iter-size 1 --weighted-sampler --resume
+#    sleep 10
+#done
+
+#for i in 4 5 6 7 8 9
+#do
+#    python train.py --name exp75 --model unet-dpn107 --lr $LR --n-epochs 150 --fold 4 --loss lovasz --batch-size 16 --iter-size 2
+#    sleep 10
+#    cp ../data/runs/exp75/model_4.pth ../data/runs/exp75/model_4_snapshotx_$i.pth
+#done
+
+
+# removed cutout, changed border_mode, resuming with lr=1e-6
 for i in 4
 do
-    #python train.py --name tmp2-unetheng --model heng34 --lr $LR --n-epochs 1000 --fold $i --loss lovasz  --batch-size 32 --iter-size 1 --weighted-sampler
-    python train.py --name tmp2-unetheng --model heng34 --lr 0.01 --n-epochs 200 --fold $i --loss lovasz  --batch-size 64 --iter-size 1 --weighted-sampler --resume
-    sleep 10
+    python train.py --name exp77 --model unet-dpn107 --lr $LR --n-epochs 150 --fold 4 --loss lovasz --batch-size 4 --iter-size 8
 done
-
 
 

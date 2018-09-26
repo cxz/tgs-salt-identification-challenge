@@ -12,11 +12,12 @@ from torch.utils.data import DataLoader
 from torch.utils.data.sampler import Sampler
 
 from albumentations.torch.functional import img_to_tensor
-from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, ElasticTransform, Compose, PadIfNeeded, RandomCrop, Cutout, IAAAdditiveGaussianNoise
+from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, ElasticTransform, Compose, PadIfNeeded, RandomCrop, Cutout, OneOf, IAAAdditiveGaussianNoise, GaussNoise, RandomContrast
 from albumentations import VerticalFlip
+from albumentations import Resize
 from albumentations import Normalize
 
-SIZE = 128
+SIZE = 256
 PATH = '../input'
 
 def generate_folds_by_depth():
@@ -64,21 +65,25 @@ def get_test_ids():
 
 def train_transform(upside_down=False):
     return Compose([
-        PadIfNeeded(min_height=SIZE, min_width=SIZE),
+        Resize(202, 202, 
+               interpolation=cv2.INTER_NEAREST),
+        PadIfNeeded(min_height=SIZE, 
+                    min_width=SIZE, 
+                    border_mode=cv2.BORDER_REPLICATE),
         VerticalFlip(p=int(upside_down)),
         HorizontalFlip(
             p=0.5),
-        #Cutout(
-        #    p=0.25,
-        #    num_holes=1,
-        #    max_h_size=10,
-        #    max_w_size=10
-        #),
-        #IAAAdditiveGaussianNoise(
-        #    p=0.2,
-        #    loc=0.0,
-        #    scale=(.0, 0.001)            
-        #),
+        Cutout(
+            p=0.00,
+            num_holes=1,
+            max_h_size=10,
+            max_w_size=10
+        ),
+        #OneOf([
+        #    IAAAdditiveGaussianNoise(),
+        #    #GaussNoise(),
+        #    #RandomContrast(),
+        #], p=0.5),
         ElasticTransform(
             p=0.25,
             alpha=1,
@@ -87,18 +92,23 @@ def train_transform(upside_down=False):
         ShiftScaleRotate(
             p=0.25,
             rotate_limit=.15,   # TODO
-            shift_limit=.25,    # TODO
-            scale_limit=.25,    # TODO
+            shift_limit=.15,    # TODO
+            scale_limit=.15,    # TODO
             interpolation=cv2.INTER_CUBIC,
-            border_mode=cv2.BORDER_REFLECT_101),
+            #border_mode=cv2.BORDER_REFLECT_101),
+            border_mode=cv2.BORDER_REPLICATE),
         Normalize(),
     ], p=1)
 
 
 def val_transform(upside_down=False):    
     return Compose([
+        Resize(202, 202, 
+               interpolation=cv2.INTER_NEAREST),
         VerticalFlip(p=int(upside_down)),
-        PadIfNeeded(min_height=SIZE, min_width=SIZE),
+        PadIfNeeded(min_height=SIZE, 
+                    min_width=SIZE,
+                    border_mode=cv2.BORDER_REPLICATE),
         Normalize()
     ], p=1)
 
@@ -331,34 +341,43 @@ class MeanTeacherTGSDataset(Dataset):
 
 
 if __name__ == '__main__':
-    print('empty.')
-    a, b = get_split(0)
-    print('train, val: ', len(a), len(b))
+    if False:
+        print('empty.')
+        a, b = get_split(0)
+        print('train, val: ', len(a), len(b))
 
-    labeled_size = len(a)
-    unlabeled_size = 18000
-    batch_size = 24
-    sampler = TwoStreamBatchSampler(
-        list(range(labeled_size)),  # labeled ids
-        list(range(labeled_size, labeled_size+unlabeled_size)),  # unlabeled ids
-        batch_size,  # total batch size (labeled + unlabeled)
-        batch_size // 2  # labeled batch size
-    )
+        labeled_size = len(a)
+        unlabeled_size = 18000
+        batch_size = 24
+        sampler = TwoStreamBatchSampler(
+            list(range(labeled_size)),  # labeled ids
+            list(range(labeled_size, labeled_size+unlabeled_size)),  # unlabeled ids
+            batch_size,  # total batch size (labeled + unlabeled)
+            batch_size // 2  # labeled batch size
+        )
 
-    print('len sampler: ', len(sampler))
+        print('len sampler: ', len(sampler))
 
-    dl = DataLoader(
-        dataset=MeanTeacherTGSDataset(a, transform=val_transform(), mode='train'),
-        batch_sampler=sampler,
-        num_workers=1,
-        pin_memory=torch.cuda.is_available()
-    )
+        dl = DataLoader(
+            dataset=MeanTeacherTGSDataset(a, transform=val_transform(), mode='train'),
+            batch_sampler=sampler,
+            num_workers=1,
+            pin_memory=torch.cuda.is_available()
+        )
 
-    for batch_idx, (inputs, target) in enumerate(dl):
-        print(batch_idx)
-        #print(type(inputs))
-        #print(inputs[0].shape, inputs[1].shape, inputs[2].shape)
-        #print(target.shape)
+        for batch_idx, (inputs, target) in enumerate(dl):
+            print(batch_idx)
+            #print(type(inputs))
+            #print(inputs[0].shape, inputs[1].shape, inputs[2].shape)
+            #print(target.shape)
+            break
+    fold_ids, val_ids = get_split(0)
+    loader = make_loader(fold_ids, transform=train_transform())
+    for x, y in loader:
+        x_ = x.data.cpu().numpy()
+        print(np.max(x_), np.mean(x_))
         break
+
+
 
 

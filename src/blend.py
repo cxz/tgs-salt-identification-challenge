@@ -68,6 +68,42 @@ def generate_submission(out_csv, preds):
 
 def main(write_submission=False):
     experiments = {
+        '../data/runs/exp77/m2': 1,
+        '../data/runs/exp77/m3': 1,
+        '../data/subm075/exp75/m1': 1,
+        '../data/subm075/exp75/m2': 1,
+        '../data/subm075/exp75/m3': 1,
+        '../data/subm068': 3,
+        '../data/subm049': 1,
+        '../data/subm048': 1,
+        '../data/subm045': 1,
+        '../data/subm036': 1,
+    }
+
+    experiments__ = {
+        '../data/runs/exp77': 1,
+        '../data/subm075/exp75/m1': 1,
+        '../data/subm075/exp75/m2': 1,
+        '../data/subm075/exp75/m3': 1,
+        '../data/subm068': 3,
+        '../data/subm049': 1,
+        '../data/subm048': 1,
+        '../data/subm045': 1,
+        '../data/subm036': 1,
+    }
+    
+    experiments_ = {
+        '../data/runs/exp75/m1': 1,
+        '../data/runs/exp75/m2': 1,
+        '../data/runs/exp75/m3': 1,
+        '../data/subm068': 2,
+        '../data/subm049': 1,
+        '../data/subm048': 1,
+        '../data/subm045': 1,
+        '../data/subm036': 1,
+    }
+    
+    experiments2_ = {
         '../data/subm068': 2,
         #'../data/subm066': 2,
         #'../data/subm055': 2,
@@ -106,7 +142,7 @@ def main(write_submission=False):
 
     preds = np.zeros((18000, 101, 101, 1), dtype=np.float32)
     
-    folds = list(range(5))
+    folds = [4] # list(range(5))
     for fold in folds:
         print('processing fold ', fold)
                         
@@ -148,11 +184,11 @@ def main(write_submission=False):
         for idx in range(final.shape[0]):
             amount = np.sum(final[idx])
             # find exact threshold on validation set using blend
-            if 0 < amount <= 35:
+            if 0 < amount <= 10:
                 final[idx] = 0
 
     if write_submission:
-        output_csv = '../submissions/subm_074.csv'
+        output_csv = '../submissions/subm_081.csv'
         print('writing to ', output_csv)
         
         generate_submission(output_csv, final)

@@ -63,16 +63,16 @@ def naive_single(logit, label):
     loss = (1. - intersect / union).sum()
     return loss
 
-def hingeloss(logits, label):
+def hingeloss(logits, label, eps=1e-9):
     mask = (label.view(-1) != 255)
     num_preds = mask.long().sum()
-    if num_preds == 0:
-        # only void pixels, the gradients should be 0
-        return logits.sum() * 0.
+    #if num_preds == 0:
+    #    # only void pixels, the gradients should be 0
+    #    return logits.sum() * 0.
     target = label.contiguous().view(-1)[mask]
     target = 2. * target.float() - 1.  # [target == 0] = -1
     logits = logits.contiguous().view(-1)[mask]
-    hinge = 1./num_preds * F.relu(1. - logits * Variable(target)).sum()
+    hinge = (F.relu(1. - target.float() * logits.float()).sum() + eps) / (eps + num_preds)
     return hinge
 
 def gamma_fast(gt, permutation, eps=1e-9):
