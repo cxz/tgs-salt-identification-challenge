@@ -58,8 +58,10 @@ def main():
     output_dir.joinpath('params.json').write_text(json.dumps(vars(args), indent=True, sort_keys=True))
     
     # in case --resume is provided it will be loaded later
-    model = models.get_model('../data/runs/exp77/model_4.pth', args.model)
-
+    model = models.get_model(None, args.model)
+    # model = models.get_model(f"../data/runs/exp81/model_{args.fold}.pth", args.model)
+    
+    
     if torch.cuda.is_available():
         if args.device_ids:
             device_ids = list(map(int, args.device_ids.split(',')))

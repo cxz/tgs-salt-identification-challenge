@@ -160,10 +160,26 @@ LR=0.0001
 #done
 
 
-# removed cutout, changed border_mode, resuming with lr=1e-6
+## removed cutout, changed border_mode, resuming with lr=1e-6
+#for i in 4
+#do
+#    python train.py --name exp77 --model unet-dpn107 --lr $LR --n-epochs 150 --fold $i --loss lovasz --batch-size 4 --iter-size 8
+#done
+
+
+#for i in 4 3 2
+#do
+#    python train.py --name exp81 --model unet-dpn107 --lr $LR --n-epochs 150 --fold $i --loss lovasz --batch-size 4 --iter-size 8
+#done
+
+
+# doubling batch size with same learning rate
 for i in 4
 do
-    python train.py --name exp77 --model unet-dpn107 --lr $LR --n-epochs 150 --fold 4 --loss lovasz --batch-size 4 --iter-size 8
+    python train.py --name exp86 --model unet-dpn107 --lr $LR --n-epochs 150 --fold $i --loss lovasz --batch-size 4 --iter-size 16
 done
+
+
+
 
 

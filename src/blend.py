@@ -68,6 +68,34 @@ def generate_submission(out_csv, preds):
 
 def main(write_submission=False):
     experiments = {
+        '../data/runs/exp81': 2,
+        '../data/runs/exp77/m2': 1,
+        '../data/runs/exp77/m3': 1,
+        '../data/subm075/exp75/m1': 1,
+        '../data/subm075/exp75/m2': 1,
+        '../data/subm075/exp75/m3': 1,
+        '../data/subm068': 3,
+        '../data/subm049': 1,
+        '../data/subm048': 1,
+        '../data/subm045': 1,
+        '../data/subm036': 1,
+    }
+    
+    experiments_0859 = {
+        '../data/runs/exp81': 2,
+        '../data/runs/exp77/m2': 1,
+        '../data/runs/exp77/m3': 1,
+        '../data/subm075/exp75/m1': 1,
+        '../data/subm075/exp75/m2': 1,
+        '../data/subm075/exp75/m3': 1,
+        '../data/subm068': 3,
+        '../data/subm049': 1,
+        '../data/subm048': 1,
+        '../data/subm045': 1,
+        '../data/subm036': 1,
+    }
+        
+    experiment_0856 = {
         '../data/runs/exp77/m2': 1,
         '../data/runs/exp77/m3': 1,
         '../data/subm075/exp75/m1': 1,
@@ -188,7 +216,7 @@ def main(write_submission=False):
                 final[idx] = 0
 
     if write_submission:
-        output_csv = '../submissions/subm_081.csv'
+        output_csv = '../submissions/subm_xxx.csv'
         print('writing to ', output_csv)
         
         generate_submission(output_csv, final)

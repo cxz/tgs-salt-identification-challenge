@@ -74,7 +74,7 @@ def train_transform(upside_down=False):
         HorizontalFlip(
             p=0.5),
         Cutout(
-            p=0.00,
+            p=0.1,
             num_holes=1,
             max_h_size=10,
             max_w_size=10
