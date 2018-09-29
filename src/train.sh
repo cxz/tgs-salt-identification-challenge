@@ -176,7 +176,7 @@ LR=0.0001
 # doubling batch size with same learning rate
 for i in 4
 do
-    python train.py --name exp86 --model unet-dpn107 --lr $LR --n-epochs 150 --fold $i --loss lovasz --batch-size 4 --iter-size 16
+    python train.py --name exp86 --model unet-dpn107 --lr $LR --n-epochs 150 --fold $i --loss lovasz --batch-size 4 --iter-size 16 --weighted-sampler --resume
 done
 
 

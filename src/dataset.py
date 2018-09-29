@@ -13,7 +13,7 @@ from torch.utils.data.sampler import Sampler
 
 from albumentations.torch.functional import img_to_tensor
 from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, ElasticTransform, Compose, PadIfNeeded, RandomCrop, Cutout, OneOf, IAAAdditiveGaussianNoise, GaussNoise, RandomContrast
-from albumentations import VerticalFlip
+from albumentations import VerticalFlip, Blur
 from albumentations import Resize
 from albumentations import Normalize
 
@@ -74,16 +74,15 @@ def train_transform(upside_down=False):
         HorizontalFlip(
             p=0.5),
         Cutout(
-            p=0.1,
-            num_holes=1,
-            max_h_size=10,
-            max_w_size=10
+            p=0.5,
+            num_holes=5,
+            max_h_size=5,
+            max_w_size=5
         ),
-        #OneOf([
-        #    IAAAdditiveGaussianNoise(),
-        #    #GaussNoise(),
-        #    #RandomContrast(),
-        #], p=0.5),
+        OneOf([
+            Blur(),
+            IAAAdditiveGaussianNoise(),
+        ], p=0.1),
         ElasticTransform(
             p=0.25,
             alpha=1,
